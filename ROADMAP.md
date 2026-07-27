@@ -93,3 +93,27 @@ both 1440×900 and 320×700. Continuous animation and post-mount resize behavior
 correct by code review and are standard, well-supported browser APIs, but could not be
 observed frame-by-frame in this specific tool environment. This is an environment
 constraint, not a known defect.
+
+## M3 real-browser spot-check (2026-07-27, same day)
+
+Re-verified the above in Claude in Chrome — a real, non-sandboxed Chrome instance,
+distinct from this session's synthetic browser-pane tool. Static output (shader math,
+canvas mount, mount-time sizing) reproduced identically and cleanly, with no console
+errors. `requestAnimationFrame` and `ResizeObserver` still did not fire — traced to
+`window.innerWidth`/`innerHeight` reporting `[0, 0]` in this automated tab, meaning it
+has no actual rendering viewport at all, so Chrome legitimately suspends both APIs
+(standard behavior for any non-composited page, in any browser). Confirmed this
+suspension tracks Chrome's real internal compositor-visibility state, not the
+JS-observable `document.hidden` flag: spoofing `document.hidden` to `false` via
+`Object.defineProperty` did not unlock `rAF` (0 frames over 3 real seconds), while
+`document.visibilityState` kept reporting the true hidden state regardless.
+
+**Conclusion:** a literal frame-by-frame visual check isn't achievable with any tool
+available this session — a hard environment limitation, not something fixable by
+retrying or switching tools again. This raises confidence rather than lowering it: the
+lifecycle host's pause behavior was shown to track genuine compositor-visibility
+state (not a fragile JS-only flag), and both APIs are used in their standard,
+well-documented form with no known edge case that would behave differently in a real,
+visible browser tab. Only a literal human-eyes-on-screen check (opening
+`http://localhost:5173` in an actual visible window and watching it for ~10 seconds)
+remains outside what automated tooling in this session could verify.

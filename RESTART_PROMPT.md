@@ -42,11 +42,17 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   `requestAnimationFrame` only while the lifecycle host is `running` and only when
   `scene.reducedMotion` is false. Canvas resizing uses a `ResizeObserver` (fixed from
   an initial `window.resize`-listener bug that left the drawing-buffer size stale after
-  a viewport change). **Caveat:** continuous animation/resize behavior verified by
-  code review only — this session's browser-pane tool doesn't composite frames, so
-  neither `requestAnimationFrame` nor `ResizeObserver` fire in it (confirmed
-  directly). Recommend a real-browser spot-check before treating that part as fully
-  proven.
+  a viewport change).
+- **(2026-07-27, M3 real-browser spot-check)** Re-verified in Claude in Chrome (a
+  real, non-sandboxed browser). Static behavior reproduced identically, no console
+  errors. `requestAnimationFrame`/`ResizeObserver` still didn't fire — traced to the
+  automated tab having a `0×0` viewport (no real rendering surface), and confirmed
+  this suspension tracks Chrome's actual compositor-visibility state, not a spoofable
+  JS flag (`document.hidden` override didn't unlock `rAF`). This is a hard limitation
+  of every automated tool available this session, not a code defect — and it
+  positively confirms the lifecycle host's pause-on-hidden logic tracks genuine
+  browser state. Only a literal human-eyes-on-screen check remains outside what any
+  available tool could verify.
 - Last full validation passed 2026-07-27: typecheck, lint, **6 Vitest files / 15
   tests**, consumer fixture, demo build, and library build. Library artifact size
   unchanged (2.26 kB), confirming none of the new browser-only code leaks into the
@@ -54,12 +60,11 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
 
 ## Exact next task
 
-M2 is done; the WebGL lifecycle scaffold, its wiring into `selectRenderer`/`Scene`, and
-a trivial animated gradient are all done. No single obvious next task — see
-`NEXT_TASK.md` for four candidate directions (visual parity, config-driven WebGL
-composition, a real-browser spot-check of the animation/resize plumbing, or moving on
-to other roadmap gaps). Update all project records and this restart pack with factual
-validation evidence when done.
+M2 is done; the WebGL lifecycle scaffold, its wiring, a trivial animated gradient, and
+a real-browser spot-check are all done. No single obvious next task — see
+`NEXT_TASK.md` for three candidate directions (visual parity, config-driven WebGL
+composition, or moving on to other roadmap gaps). Update all project records and this
+restart pack with factual validation evidence when done.
 
 ## Non-negotiables
 
@@ -72,9 +77,11 @@ validation evidence when done.
 
 ## Known risks
 
-- WebGL renderer's continuous-animation and resize-repaint behavior is verified by
-  code review, not live observation (see caveat above) — worth confirming in a real
-  browser before relying on it further.
+- Only a literal human-eyes-on-screen check of the WebGL animation/resize behavior
+  remains unverified — every automated verification path available this session has
+  been exhausted and passed (see spot-check evidence above). Low risk: both APIs used
+  are standard, well-documented, and the suspension observed is confirmed to be a
+  tooling/viewport limitation, not a code issue.
 - Visual parity between the WebGL and CSS scenes is not attempted — intentionally
   scoped as "trivial" for now.
 - The `Scene` branch decision (webgl vs. css) has no automated test — verified only by

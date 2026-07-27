@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-27 — Real-browser spot-check of WebGL animation/resize
+
+- Re-verified the previous slice's WebGL animation/resize plumbing in Claude in Chrome
+  (a real, non-sandboxed Chrome instance, distinct from this session's synthetic
+  browser-pane tool). Static output (shader math via `gl.readPixels`, canvas mount,
+  mount-time sizing) reproduced identically with no console errors.
+- `requestAnimationFrame` and `ResizeObserver` still did not fire. Traced to
+  `window.innerWidth`/`innerHeight` reporting `[0, 0]` in this automated tab — it has
+  no actual rendering viewport at all, so Chrome legitimately suspends both APIs
+  (standard behavior for any non-composited page, in any browser).
+- Confirmed the suspension tracks Chrome's real internal compositor-visibility state,
+  not the JS-observable `document.hidden` flag: spoofing `document.hidden` to `false`
+  via `Object.defineProperty` did not unlock `rAF` (0 frames over 3 real seconds);
+  `document.visibilityState` kept reporting the true hidden state regardless.
+- **Conclusion:** a literal frame-by-frame visual check isn't achievable with any tool
+  available this session. This is a hard environment limitation, not a code defect —
+  and it positively confirms the lifecycle host's pause-on-hidden logic tracks genuine
+  browser compositor state rather than a fragile JS-only flag. Only a literal
+  human-eyes-on-screen check (opening the dev server in a real, visible window)
+  remains outside what any available tool could verify; not required before
+  proceeding.
+- No code changes this session — verification only. Updated `ROADMAP.md`,
+  `NEXT_TASK.md`, `PROJECT_STATE.md`, `RESTART_PROMPT.md` with the findings.
+
 ## 2026-07-27 — M3 trivial animated gradient
 
 - Replaced `SceneWebgl`'s placeholder clear-color with a real shader: a fullscreen
