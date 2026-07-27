@@ -1,7 +1,7 @@
 # Project state
 
-**Current milestone:** M1 — package and scene-schema foundation **complete**.
-M2 — core scene composition and dependable non-WebGL fallback — **in progress**.
+**Current milestone:** M1 and M2 **complete**. M3 (progressive WebGL enhancement) has
+not started.
 
 ## Evidence as of 2026-07-27 (reconciliation pass)
 
@@ -21,13 +21,33 @@ drifted from what the code actually does.
   (`cssRendererHost.test.ts`) covering hidden/offscreen pausing, manual pause/resume,
   and listener/observer cleanup on dispose. This existed already but was not reflected
   in `ROADMAP.md`, `NEXT_TASK.md`, or this file until now.
-- Confirmed a real gap: `src/components/SceneFallback.tsx` renders fixed, hardcoded
-  markup (aura/rain/subject divs) and does **not** read `scene.layers` or
-  `scene.effects` from the validated `SceneConfig`. The schema and validation are real
-  and tested, but nothing in the render path is driven by them yet — toggling
-  `effects.codeRain` to `false`, for example, currently has no visual effect.
 - Grepped `src/` for `TODO`/`FIXME`/`mock`/`placeholder`/`lorem`/`any`-escapes: no
   matches. Nothing found is a stub dressed up as done.
+
+## Evidence as of 2026-07-27 (M2 composition slice, same day)
+
+- Added `src/scene/composition.ts`: `selectActiveLayers(scene)` filters `scene.layers`
+  by the matching `scene.effects` flag (`code-rain`→`codeRain`, `particles`→
+  `particles`, `lighting`→`glow`; `portrait` always included). Pure, browser-free,
+  exported from the public library entry. Tested in `composition.test.ts` (4 tests):
+  default-scene selection, effect-flag exclusion, particles-layer inclusion/exclusion,
+  and portrait always surviving all-flags-off.
+- Rewired `SceneFallback` to render only `selectActiveLayers(scene)`, applying each
+  layer's `opacity` via inline style, `density` (code-rain: scales rendered column
+  count), `intensity` (lighting: drives `--aura-intensity` → CSS `brightness()`), and
+  `count` (particles: renders that many dot elements).
+- Added real CSS layout differentiation for `scene--portrait` (4:5 aspect-ratio) and
+  `scene--square` (1:1 aspect-ratio) versus the full-bleed `scene--hero` default —
+  verified via computed-style inspection in a live browser (`aspectRatio`,
+  `minHeight`, `alignItems` all differ by format).
+- Full validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (**5 files, 11
+  tests**), `pnpm build` (demo + library), `pnpm test:consumer`.
+- Live browser inspection (dev server, not just built artifact) at 1440×900 and
+  320×700: no console errors; confirmed via `getComputedStyle`/DOM inspection that
+  `density`/`intensity` values from the default scene actually reach rendered output
+  (3 rain columns from `density: 0.4`, `--aura-intensity: 0.7` from `intensity: 0.7`),
+  and that hero/portrait/square produce different `aspect-ratio`/`min-height`/
+  `align-items` computed values.
 
 ## Completed
 
@@ -44,15 +64,15 @@ drifted from what the code actually does.
   deterministic listener/observer cleanup and unit test coverage.
 - Git repository initialized, remote README merged, pushed to
   `github.com/reshimu/matrix-women`.
+- **(M2, this session)** Config-driven scene composition: `scene.layers` and
+  `scene.effects` now actually control rendered output; `hero`/`portrait`/`square`
+  produce real, distinct layouts.
 
 ## Risks and blockers
 
-- **Scene composition is not config-driven yet.** `SceneFallback` ignores
-  `scene.layers` and `scene.effects` entirely — this is the actual remaining M2 work,
-  not the lifecycle host (which is done). See `NEXT_TASK.md`.
 - No browser-only *enhanced* (WebGL) renderer exists yet; its lifecycle, context-loss
   recovery, and constrained-device behavior are unimplemented (M3 scope — correctly
-  still pending).
+  still pending, next up per `ROADMAP.md`).
 - Reduced-motion behavior is implemented in CSS and renderer selection, but automated
   browser-emulation coverage does not exist; the lifecycle host's real
   `browserEnvironment()` path (actual `window.document`/`IntersectionObserver`) has no
@@ -65,8 +85,6 @@ drifted from what the code actually does.
 
 ## Exact next task
 
-Wire `SceneFallback` (or a new composition layer) to actually render from validated
-`SceneConfig` data — respect `scene.layers` (opacity/density/intensity),
-`scene.effects` (codeRain/particles/glow toggles), and `scene.format`
-(hero/portrait/square) — instead of the current hardcoded markup. Full done-criteria in
-`NEXT_TASK.md`.
+M2 is complete. See `NEXT_TASK.md` for the proposed first M3 slice (defining the WebGL
+renderer lifecycle contract) — not started; awaiting confirmation before beginning a
+new milestone's implementation work.

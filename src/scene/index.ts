@@ -1,4 +1,5 @@
 export { defaultScene, normalizeScene } from './types'
 export { validateScene } from './validate'
+export { selectActiveLayers } from './composition'
 export type { SceneConfig, SceneFormat, SceneInput, SceneLayer } from './types'
 export type { SceneValidationResult } from './validate'

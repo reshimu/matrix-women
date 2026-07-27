@@ -1,40 +1,35 @@
 # Next atomic task
 
-**Task:** Wire `SceneFallback` (or a new composition layer beneath it) to actually
-render from validated `SceneConfig` data, instead of the current hardcoded markup.
-Specifically: respect `scene.layers` (per-layer `opacity`, and `density`/`intensity`
-where applicable), `scene.effects` (`codeRain`/`particles`/`glow` toggles), and
-`scene.format` (`hero`/`portrait`/`square` should produce visually distinct layouts,
-not just a no-op CSS class).
+M2 (core scene composition and dependable non-WebGL fallback) is **complete** as of
+2026-07-27. `selectActiveLayers` makes `scene.layers`/`scene.effects` actually drive
+render output, and `hero`/`portrait`/`square` produce real distinct layouts. Full
+evidence in `PROJECT_STATE.md` and `ROADMAP.md`.
+
+## Proposed next task (M3 kickoff — not started, needs confirmation)
+
+**Task:** Define the enhanced (WebGL) renderer's lifecycle contract, mirroring
+`src/renderer/browser/cssRendererHost.ts`'s `start`/`pause`/`resume`/`dispose` shape,
+and implement a minimal WebGL renderer host behind the existing `selectRenderer`
+boundary (`src/renderer/select.ts`). Scope to the *lifecycle scaffold* only — do not
+attempt full visual parity with the CSS scene in this slice.
 
 **Done when:**
-- Setting `effects.codeRain`, `effects.particles`, or `effects.glow` to `false`
-  measurably removes or hides the corresponding visual layer in rendered output.
-- Layer `opacity`/`density`/`intensity` values from a `SceneConfig` are reflected in
-  what's rendered (not hardcoded constants).
-- `portrait` and `square` formats render distinguishably different layouts from
-  `hero`, not just a differently-named class with identical visual result.
-- Unit or rendering tests cover at least one non-default `SceneConfig` to prove the
-  composition is config-driven.
-- Project records (`PROJECT_STATE.md`, `CHANGELOG.md`, `ROADMAP.md`, this file) are
-  updated with evidence before the session ends.
+- A `WebglRendererHost` (or equivalently named) module exists under
+  `src/renderer/browser/`, exposing the same `start`/`pause`/`resume`/`dispose`/
+  `getState` shape as the CSS host, with an injectable environment for testing.
+- It handles WebGL context loss (`webglcontextlost`/`webglcontextrestored`) explicitly
+  — this is the one behavior the CSS host has no analog for and is named in
+  `PROJECT_SPEC.md`/`AGENTS.md` as a hard requirement.
+- It pauses on hidden-document/offscreen states, same as the CSS host.
+- No WebGL-specific code leaks into `src/index.ts` (the public library entry stays
+  renderer-independent per ADR-0003).
+- Unit tests cover start/pause/resume/dispose transitions and context-loss/restore,
+  using an injected fake environment (same pattern as `cssRendererHost.test.ts`).
+- Constrained-device behavior (already partially handled by `selectRenderer` steering
+  constrained devices to `css`) is not re-litigated here — this slice is the lifecycle
+  contract only.
 
-**Current blocker:** none. The renderer-independent schema, validation, renderer
-selection, and CSS lifecycle host are all implemented and tested — this task connects
-that existing infrastructure to actual render output.
-
-## Correction (2026-07-27)
-
-This file previously listed "Define the renderer lifecycle contract and implement a
-browser-only CSS renderer host" as the next task. That work is already done:
-`src/renderer/browser/cssRendererHost.ts` implements `start`/`pause`/`resume`/`dispose`
-with visibility-change and `IntersectionObserver`-driven pausing, isolated from the
-public library entry (`src/index.ts` exports no browser APIs). Its test file
-(`cssRendererHost.test.ts`) covers hidden/offscreen pausing, manual pause/resume, and
-listener/observer cleanup on dispose. Verified 2026-07-27 by reading the implementation
-and running `pnpm test` (7/7 tests passing, 0 failures).
-
-This was apparently completed in an earlier session but never reported back — this
-file, `ROADMAP.md`, and `CHANGELOG.md` all still described it as pending. Treat any
-tracker file in this repo as unverified until cross-checked against the actual code and
-a real test run.
+**Current blocker:** none technical. This starts a new milestone (M3) — confirm before
+implementation begins, since it's a larger and more architecturally novel slice than
+prior M1/M2 work (first browser-only enhancement path, first place WebGL context-loss
+handling is needed).

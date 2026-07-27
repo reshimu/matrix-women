@@ -23,3 +23,11 @@
 - [x] Public scene configuration is renderer-independent and has deterministic validation coverage.
 - [x] CSS fallback selection is pure and tested for reduced-motion, constrained-device, and missing-WebGL cases.
 - [x] A separately emitted ES library artifact is consumable through the package name without importing demo code.
+
+## M2 — core scene composition and dependable non-WebGL fallback
+
+- [x] Rendered output is driven by validated `SceneConfig`: `scene.layers` (per-layer opacity, and density/intensity/count where applicable) and `scene.effects` (codeRain/particles/glow toggles) measurably change what renders, verified by unit tests (`composition.test.ts`) and live in a real browser via computed-style inspection.
+- [x] `hero`, `portrait`, and `square` formats produce distinguishable layouts (aspect-ratio, min-height, alignment), not a cosmetic class-name-only difference — verified via computed-style inspection in a real browser.
+- [x] Browser-only CSS renderer lifecycle host (start/pause/resume/dispose) pauses on hidden-document/offscreen states with deterministic listener/observer cleanup — unit tested.
+- [ ] Real-DOM/browser-environment automated test coverage for the lifecycle host (current tests exercise only an injected fake environment; the real `browserEnvironment()` path has manual-only verification). Deferred to M5 validation closeout — see `RISKS.md`.
+- [ ] Additional scene formats/layer combinations demoed in the actual demo app, not just proven in isolation (`main.tsx` still mounts only the default hero scene). Deferred — not required for M2's composition-correctness goal.

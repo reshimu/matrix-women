@@ -1,12 +1,63 @@
-import { useEffect, useRef } from 'react'
-import type { SceneConfig } from '../scene'
+import { useEffect, useMemo, useRef } from 'react'
+import type { CSSProperties } from 'react'
+import type { SceneConfig, SceneLayer } from '../scene'
+import { selectActiveLayers } from '../scene'
 import { createCssRendererHost } from '../renderer/browser/cssRendererHost'
 
 type SceneFallbackProps = { scene: SceneConfig }
 
+const RAIN_TEXT = 'MATRIX / AI / LIGHT / HUMAN /'
+
+function renderLayer(layer: SceneLayer) {
+  const style: CSSProperties = { opacity: layer.opacity }
+  switch (layer.type) {
+    case 'portrait':
+      return (
+        <div key={layer.id} className="scene__subject" style={style} aria-hidden="true">
+          <div className="subject__halo" />
+          <div className="subject__head" />
+          <div className="subject__neck" />
+          <div className="subject__shoulders" />
+        </div>
+      )
+    case 'code-rain': {
+      const columns = Math.max(1, Math.round(layer.density * 8))
+      return (
+        <div key={layer.id} className="scene__rain" style={style} aria-hidden="true">
+          {Array.from({ length: columns }, (_, index) => (
+            <span key={index} style={{ animationDelay: `${(index / columns) * -13}s` }}>{RAIN_TEXT}</span>
+          ))}
+        </div>
+      )
+    }
+    case 'lighting':
+      return (
+        <div
+          key={layer.id}
+          className="scene__aura"
+          style={{ ...style, '--aura-intensity': layer.intensity } as CSSProperties}
+          aria-hidden="true"
+        />
+      )
+    case 'particles':
+      return (
+        <div key={layer.id} className="scene__particles" style={style} aria-hidden="true">
+          {Array.from({ length: layer.count }, (_, index) => (
+            <span
+              key={index}
+              className="particle"
+              style={{ left: `${(index * 47) % 100}%`, top: `${(index * 71) % 100}%`, animationDelay: `${(index % 10) * 0.4}s` }}
+            />
+          ))}
+        </div>
+      )
+  }
+}
+
 export function SceneFallback({ scene }: SceneFallbackProps) {
   const motionClass = scene.reducedMotion ? 'scene--still' : 'scene--animated'
   const sceneRef = useRef<HTMLElement>(null)
+  const activeLayers = useMemo(() => selectActiveLayers(scene), [scene])
 
   useEffect(() => {
     if (!sceneRef.current) return
@@ -17,14 +68,7 @@ export function SceneFallback({ scene }: SceneFallbackProps) {
 
   return (
     <section ref={sceneRef} className={`scene scene--${scene.format} ${motionClass}`} aria-labelledby="scene-title">
-      <div className="scene__aura" aria-hidden="true" />
-      <div className="scene__rain" aria-hidden="true"><span>MATRIX / AI / LIGHT / HUMAN /</span></div>
-      <div className="scene__subject" aria-hidden="true">
-        <div className="subject__halo" />
-        <div className="subject__head" />
-        <div className="subject__neck" />
-        <div className="subject__shoulders" />
-      </div>
+      {activeLayers.map(renderLayer)}
       <div className="scene__content">
         <p className="scene__eyebrow">{scene.eyebrow}</p>
         <h1 id="scene-title">{scene.title}</h1>

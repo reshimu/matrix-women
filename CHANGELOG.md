@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-27 — M2 core scene composition
+
+- Added `src/scene/composition.ts` (`selectActiveLayers`, pure and tested) so
+  `scene.effects` toggles (codeRain/particles/glow) actually determine which
+  configured `scene.layers` render, rather than being ignored.
+- Wired `SceneFallback` to render only active layers, applying each layer's
+  `opacity`, and `density`/`intensity`/`count` where applicable, to real output.
+- Added a `particles` layer render path (previously typed and validated but never
+  rendered anywhere).
+- Added real CSS layout differentiation for `hero`/`portrait`/`square` formats
+  (distinct aspect-ratio, min-height, alignment) — verified via computed-style
+  inspection, not just class-name presence.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (5 files / 11 tests, up from
+  4/7), `pnpm build`, `pnpm test:consumer` all passed. Live browser inspection at
+  1440×900 and 320×700 confirmed config values reach rendered output with no console
+  errors.
+- Marked M2 complete in `ROADMAP.md`/`ACCEPTANCE_CRITERIA.md`; proposed the first M3
+  (WebGL lifecycle) slice in `NEXT_TASK.md`, pending confirmation before starting.
+
 ## 2026-07-27 — Recon and record reconciliation
 
 - Ran a full recon pass (no product code changed): re-verified typecheck, lint, tests

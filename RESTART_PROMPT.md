@@ -9,34 +9,34 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
 ## Current verified state
 
 - Explicit greenfield authorization; no prototype was provided.
-- M0 and M1 are complete. M2 (core scene composition + dependable non-WebGL fallback)
-  is **in progress**, not unstarted.
+- M0, M1, and M2 are complete. M3 (progressive WebGL enhancement) has not started.
 - Demo: Vite 8 + React 19 + TypeScript 5.9 + Tailwind 4. `src/main.tsx` renders the responsive CSS fallback in `src/components/SceneFallback.tsx`.
-- Library: `src/index.ts` exports browser-free scene defaults/types/validation plus renderer selection. `vite.library.config.ts` emits `dist/lib/index.js`; `tsconfig.lib.json` emits declarations.
+- Library: `src/index.ts` exports browser-free scene defaults/types/validation, renderer selection, and `selectActiveLayers`. `vite.library.config.ts` emits `dist/lib/index.js`; `tsconfig.lib.json` emits declarations.
 - Consumer proof: `fixtures/library-consumer.mjs` imports `@matrix-ai/ui` after `pnpm build:library`.
-- **Already done (verified 2026-07-27, was previously unreported in this file):** a
-  browser-only CSS renderer lifecycle host exists at
+- Browser-only CSS renderer lifecycle host exists at
   `src/renderer/browser/cssRendererHost.ts` — `start`/`pause`/`resume`/`dispose`,
   driven by `visibilitychange` and `IntersectionObserver`, with injectable environment
-  and its own passing test file. Do not re-implement this.
-- **Not yet done:** `SceneFallback` does not read `scene.layers` or `scene.effects` —
-  it renders fixed hardcoded markup regardless of the `SceneConfig` passed in. This is
-  the real next task (see below).
-- Last full validation passed 2026-07-27: typecheck, lint, 4 Vitest files / 7 tests,
-  consumer fixture, demo build, and library build — all re-verified fresh, not carried
-  over from the 2026-07-26 record.
-- Last visual inspection passed 2026-07-26 at 1440×900 and 320×700 with no
-  browser-console warnings/errors. Not re-inspected in the 2026-07-27 pass (no visual
-  code changed).
+  and its own passing test file.
+- **(2026-07-27, M2 composition slice)** `src/scene/composition.ts` exports
+  `selectActiveLayers`, which filters `scene.layers` by the matching `scene.effects`
+  flag. `SceneFallback` renders only active layers and applies each layer's
+  opacity/density/intensity/count to actual output. `hero`/`portrait`/`square` now
+  produce real, distinct CSS layouts (aspect-ratio, min-height, alignment all differ),
+  verified via computed-style inspection in a live browser.
+- Last full validation passed 2026-07-27: typecheck, lint, **5 Vitest files / 11
+  tests**, consumer fixture, demo build, and library build.
+- Last visual inspection passed 2026-07-27 at 1440×900 and 320×700 in a live dev
+  server (not just the built artifact): no browser-console errors; confirmed via
+  `getComputedStyle` that density/intensity/format actually reach rendered output.
 
 ## Exact next task
 
-Wire `SceneFallback` (or a new composition layer) to render from the validated
-`SceneConfig` — respect `scene.layers` (opacity/density/intensity per layer),
-`scene.effects` (codeRain/particles/glow toggles), and `scene.format`
-(hero/portrait/square should look visually distinct) — instead of today's hardcoded
-markup. Full done-criteria in `NEXT_TASK.md`. Update all project records and this
-restart pack with factual validation evidence when done.
+M2 is done. Proposed next slice (not started, needs confirmation before beginning —
+it's a new milestone): define the WebGL renderer's lifecycle contract (mirroring
+`cssRendererHost.ts`'s start/pause/resume/dispose shape) plus context-loss handling,
+behind the existing `selectRenderer` boundary. Full done-criteria in `NEXT_TASK.md`.
+Update all project records and this restart pack with factual validation evidence when
+done.
 
 ## Non-negotiables
 
@@ -49,13 +49,12 @@ restart pack with factual validation evidence when done.
 
 ## Known risks
 
-- Config-driven scene composition (layers/effects actually affecting render output) is
-  the biggest gap toward a shippable design system — bigger than the still-pending
-  WebGL enhancement, since the CSS fallback path is supposed to be the dependable
-  baseline.
 - Browser-only enhanced (WebGL) renderer lifecycle, builder round-trip, Next.js
   fixture, real-DOM/browser regression tests (current tests only exercise an injected
   fake environment), and full release validation remain outstanding.
+- Only one format (`hero`) is actually mounted in the demo app (`main.tsx`); `portrait`
+  and `square` are proven correct via computed-style inspection but not demoed live.
+  Low priority — real M4 builder work will exercise this properly.
 - Git repository now exists and is pushed to `github.com/reshimu/matrix-women` — the
   "no Git repository" risk recorded on 2026-07-26 no longer applies. Both Codex and
   Claude Code now work against this remote; treat any tracker file (`NEXT_TASK.md`,
