@@ -89,11 +89,38 @@ drifted from what the code actually does.
   is a lifecycle scaffold only, not wired into `selectRenderer` or `SceneFallback`, and
   has no shaders/geometry/actual WebGL drawing behind it.
 
+## Evidence as of 2026-07-27 (M3 wiring slice, same day, Option B)
+
+- Added `src/components/Scene.tsx`: a composition root that detects
+  `prefersReducedMotion`/`supportsWebGL`/`constrainedDevice` live in the browser,
+  passes them to the already-tested `selectRenderer`, and mounts `SceneWebgl` or
+  `SceneFallback` accordingly.
+- Added `src/components/SceneWebgl.tsx`: obtains a real `WebGLRenderingContext` from a
+  mounted `<canvas>`, wires up `createWebglRendererHost`, and paints a placeholder
+  clear color — no shaders or geometry, by design (that's the next slice).
+- `main.tsx` now renders `<Scene>` instead of `<SceneFallback>` directly.
+- Live-verified in a real browser (dev server, both branches exercised):
+  - **WebGL branch:** canvas mounted at the correct size with a working context;
+    `gl.readPixels` confirmed the placeholder clear color actually painted
+    (`[13, 41, 43, 255]` ≈ `clearColor(0.05, 0.16, 0.17, 1)`).
+  - **CSS fallback branch:** temporarily forced `detectSupportsWebGL()` to return
+    `false`, reloaded, confirmed `SceneFallback` mounted instead (rain/subject present,
+    no canvas), then reverted the override before running final validation and
+    committing — the shipped code path was not the modified one.
+- Full validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (6 files, 15
+  tests — unchanged, since this slice is integration wiring around already-tested
+  units), `pnpm build`, `pnpm test:consumer`. Library artifact size unchanged
+  (2.26 kB) — `Scene`/`SceneWebgl` are demo-only.
+
 ## Risks and blockers
 
 - No actual WebGL rendering content exists yet (shaders, geometry, a drawn scene) —
-  only the lifecycle contract. The host is not wired into `selectRenderer` or
-  `SceneFallback`, so selecting `webgl` capability today still renders nothing new.
+  only a placeholder clear-color paint. This is the next slice.
+- The `Scene` → `SceneWebgl`/`SceneFallback` branch decision itself has no automated
+  test (no jsdom/browser-mode Vitest project exists) — verified only by the manual
+  live-browser check above (both branches), which is repeatable but not automated.
+  Consistent with the existing accepted gap: no automated real-DOM test coverage
+  anywhere in this repo yet (see M5 scope).
 - Reduced-motion behavior is implemented in CSS and renderer selection, but automated
   browser-emulation coverage does not exist; the lifecycle host's real
   `browserEnvironment()` path (actual `window.document`/`IntersectionObserver`) has no
@@ -106,6 +133,7 @@ drifted from what the code actually does.
 
 ## Exact next task
 
-The WebGL lifecycle scaffold is done. See `NEXT_TASK.md` for the proposed next M3
-slice (actual minimal WebGL rendering content, or wiring the host into
-`selectRenderer`/`SceneFallback`) — not started; awaiting confirmation.
+The WebGL lifecycle scaffold and its end-to-end wiring are both done. See
+`NEXT_TASK.md` for the proposed next M3 slice: actual WebGL rendering content
+(shaders/geometry) behind the now-working mount point — not started; awaiting
+confirmation.

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-27 — M3 WebGL wiring (Option B)
+
+- Added `src/components/Scene.tsx`: a composition root that detects
+  `prefersReducedMotion`, `supportsWebGL` (via a throwaway canvas WebGL-context probe),
+  and `constrainedDevice` (via `navigator.hardwareConcurrency`/`deviceMemory`) live in
+  the browser, feeds them to `selectRenderer`, and mounts `SceneWebgl` or
+  `SceneFallback` accordingly.
+- Added `src/components/SceneWebgl.tsx`: mounts a real `<canvas>`, obtains a genuine
+  `WebGLRenderingContext`, wires up `createWebglRendererHost`, and paints a
+  placeholder clear color on start/resume. Deliberately no shaders or geometry yet.
+- `main.tsx` now renders `<Scene>` instead of `<SceneFallback>` directly.
+- Live-verified both branches in a real browser: WebGL branch confirmed via
+  `gl.readPixels` (placeholder color actually painted on a correctly-sized canvas);
+  CSS fallback branch confirmed by temporarily forcing `detectSupportsWebGL()` to
+  return `false`, reloading, verifying `SceneFallback` mounted, then reverting the
+  override before running final validation and committing.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (6 files / 15 tests,
+  unchanged — this slice is integration wiring around already-tested units), `pnpm
+  build`, `pnpm test:consumer`. Library artifact size unchanged (2.26 kB).
+- M3 marked "in progress" (wiring done, no rendering content yet) in
+  `ROADMAP.md`/`ACCEPTANCE_CRITERIA.md`; next slice (actual WebGL rendering content)
+  proposed in `NEXT_TASK.md`, pending confirmation.
+
 ## 2026-07-27 — M3 WebGL renderer lifecycle scaffold
 
 - Extracted `src/renderer/browser/environment.ts` (shared `BrowserLifecycleEnvironment`

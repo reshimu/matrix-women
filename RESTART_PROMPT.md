@@ -32,19 +32,26 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   (via `webglcontextlost`/`webglcontextrestored`) that overrides visibility/
   intersection pausing until restored. Shared environment types extracted to
   `src/renderer/browser/environment.ts` (used by both hosts, no behavior change to the
-  CSS host). Deliberately unwired: no shaders/geometry, not connected to
-  `selectRenderer` or `SceneFallback`.
+  CSS host).
+- **(2026-07-27, M3 wiring, Option B)** `src/components/Scene.tsx` now runs
+  `selectRenderer` with live capability detection and mounts `SceneWebgl` (real canvas
+  + working `WebGLRenderingContext` + `createWebglRendererHost`, placeholder
+  clear-color paint only) or `SceneFallback`. `main.tsx` mounts `<Scene>`. Both
+  branches confirmed live in a real browser (WebGL via `gl.readPixels` pixel check;
+  CSS fallback via a temporary forced-false override, reverted before commit).
 - Last full validation passed 2026-07-27: typecheck, lint, **6 Vitest files / 15
   tests**, consumer fixture, demo build, and library build. Library artifact size
-  unchanged (2.26 kB), confirming the WebGL host doesn't leak into the public entry.
+  unchanged (2.26 kB), confirming none of the new browser-only code leaks into the
+  public entry.
 
 ## Exact next task
 
-M2 is done; the WebGL lifecycle scaffold (M3 slice 1) is done. Proposed next slice
-(not started, needs confirmation — two options, pick one): (A) give the WebGL host
-actual rendering content, or (B) wire it into `selectRenderer`/`SceneFallback` so
-`webgl` selection mounts something real. Full done-criteria in `NEXT_TASK.md`. Update
-all project records and this restart pack with factual validation evidence when done.
+M2 is done; the WebGL lifecycle scaffold and its wiring into `selectRenderer`/`Scene`
+are both done. Proposed next slice (not started, needs confirmation): give the WebGL
+mount point actual rendering content (shaders/geometry) driven by `SceneConfig`,
+respecting the lifecycle host's paused/context-lost states and reduced-motion. Full
+done-criteria in `NEXT_TASK.md`. Update all project records and this restart pack with
+factual validation evidence when done.
 
 ## Non-negotiables
 
@@ -57,9 +64,11 @@ all project records and this restart pack with factual validation evidence when 
 
 ## Known risks
 
-- WebGL renderer has a lifecycle contract but no actual rendering content, and isn't
-  wired into `selectRenderer`/`SceneFallback` yet — selecting `webgl` today still
-  renders nothing new.
+- WebGL renderer has a working lifecycle contract and is correctly wired into
+  `selectRenderer`/`Scene`, but has no actual rendering content yet — the mounted
+  canvas only clears to a placeholder color. That's the next slice.
+- The `Scene` branch decision (webgl vs. css) has no automated test — verified only by
+  manual live-browser checks (repeatable, but not run in CI).
 - Builder round-trip, Next.js fixture, real-DOM/browser regression tests (current
   tests only exercise an injected fake environment for both the CSS and WebGL hosts),
   and full release validation remain outstanding.

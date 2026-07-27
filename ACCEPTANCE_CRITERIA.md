@@ -41,9 +41,10 @@
       visibility/intersection-driven pausing — unit tested.
 - [x] No WebGL-specific code leaks into `src/index.ts`; verified the library artifact
       size is unchanged (2.26 kB) after adding the host.
+- [x] Wired into `selectRenderer`/`Scene` so `webgl` capability actually mounts a real
+      canvas with a working WebGL context — live-verified in a real browser (both the
+      `webgl` and `css` branches were exercised and confirmed, not just type-checked).
 - [ ] Actual WebGL rendering content (shaders, geometry, a rendered scene) — not
-      started.
-- [ ] Wiring into `selectRenderer`/`SceneFallback` so `webgl` capability actually
-      renders something — not started.
+      started. The mounted canvas only clears to a placeholder color.
 - [ ] Constrained-device behavior beyond what `selectRenderer` already does (steering
       constrained devices to `css`) — not re-evaluated in this slice.
