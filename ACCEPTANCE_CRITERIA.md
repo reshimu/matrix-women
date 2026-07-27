@@ -44,7 +44,14 @@
 - [x] Wired into `selectRenderer`/`Scene` so `webgl` capability actually mounts a real
       canvas with a working WebGL context — live-verified in a real browser (both the
       `webgl` and `css` branches were exercised and confirmed, not just type-checked).
-- [ ] Actual WebGL rendering content (shaders, geometry, a rendered scene) — not
-      started. The mounted canvas only clears to a placeholder color.
+- [x] A trivial animated-gradient shader renders, respects the lifecycle host's
+      running/paused states (no animation while paused/context-lost), and respects
+      `scene.reducedMotion` (static single frame instead of a continuous loop).
+      Shader math and mount-time sizing verified live via `gl.readPixels`;
+      continuous-frame and post-mount-resize behavior verified by code review only —
+      this sandboxed browser pane doesn't composite frames, so neither
+      `requestAnimationFrame` nor `ResizeObserver` fire in it (confirmed directly).
+- [ ] Visual parity with the CSS scene (matrix rain, portrait, lighting) — explicitly
+      out of scope for this "trivial" gradient slice.
 - [ ] Constrained-device behavior beyond what `selectRenderer` already does (steering
       constrained devices to `css`) — not re-evaluated in this slice.

@@ -5,7 +5,7 @@
 | M0 | Audit repository and establish governance; use explicit greenfield authorization when no prototype exists | Complete — authorization recorded 2026-07-26 |
 | M1 | Establish package boundaries, renderer-independent scene schema, and Vite builder baseline | Complete — separate library artifact and consumer fixture validated |
 | M2 | Implement core scene composition and dependable non-WebGL fallback | Complete — CSS fallback lifecycle host and config-driven scene composition (layers + effects + format) implemented and tested; validated 2026-07-27. |
-| M3 | Add progressive WebGL enhancement, lifecycle management, and constrained-device behavior | In progress — renderer lifecycle contract, context-loss handling, and end-to-end wiring (`selectRenderer` → `Scene` → mounted WebGL host) implemented and live-verified. No actual WebGL rendering content (shaders/geometry) exists yet — the mounted canvas only clears to a placeholder color. |
+| M3 | Add progressive WebGL enhancement, lifecycle management, and constrained-device behavior | In progress — renderer lifecycle contract, end-to-end wiring, and a trivial animated-gradient shader implemented; shader math and mount-time sizing verified live, continuous animation/resize behavior verified by code review only (see M3 gradient entry below for why). |
 | M4 | Build responsive builder, configuration round-trip, and documented public API | Pending |
 | M5 | Complete automated/browser/visual/accessibility/performance validation and release audit | Pending |
 
@@ -60,3 +60,36 @@ demo-only and don't leak into the public entry.
 
 M3 remains "in progress": the end-to-end wiring works, but there is still no actual
 WebGL rendering content.
+
+## M3 trivial animated gradient added (2026-07-27, same day)
+
+Replaced `SceneWebgl`'s placeholder clear-color with a real (if intentionally simple)
+shader: a fullscreen triangle vertex shader plus a fragment shader that mixes two
+colors with a `sin(uTime * 0.4 + ...)` term, driven by a `requestAnimationFrame` loop
+that only runs while the lifecycle host reports `running`, and only if
+`scene.reducedMotion` is false (matching the CSS host's reduced-motion behavior — a
+single static frame otherwise).
+
+**Bug found and fixed during verification:** the canvas's WebGL drawing-buffer size
+was only resynced to its CSS size via a `window.resize` listener, which does not fire
+for all viewport-size changes (caught live: `canvas.clientWidth/Height` updated
+correctly but `canvas.width/height` — the actual render-target resolution — stayed
+stale). Replaced with a `ResizeObserver` on the canvas element itself, which is the
+correct API for this (reacts to any layout-driven size change, not just window
+resizes) and also repaints immediately on resize using the last-known animation time,
+so a paused/reduced-motion scene stays correctly sized too.
+
+**Verification limits, stated plainly:** this sandboxed browser pane does not
+composite frames (documented from the first screenshot attempt of this whole recon
+session) — as a direct consequence, neither `requestAnimationFrame` nor
+`ResizeObserver` callbacks fire in it at all, confirmed by direct tests (a raw
+`ResizeObserver` on the canvas never fired even for a manual `canvas.style.width`
+change; a raw `requestAnimationFrame` counter loop never completed within 30s). What
+*was* verified live: the shader's static output at `uTime=0` (`gl.readPixels` matched
+the hand-computed shader math to the pixel), the lifecycle host's `running`/`paused`
+state gating works (confirmed by force-toggling `document.hidden` and checking
+`canvas.dataset.rendererState`), and initial mount-time canvas sizing is correct at
+both 1440×900 and 320×700. Continuous animation and post-mount resize behavior are
+correct by code review and are standard, well-supported browser APIs, but could not be
+observed frame-by-frame in this specific tool environment. This is an environment
+constraint, not a known defect.

@@ -112,15 +112,54 @@ drifted from what the code actually does.
   units), `pnpm build`, `pnpm test:consumer`. Library artifact size unchanged
   (2.26 kB) — `Scene`/`SceneWebgl` are demo-only.
 
+## Evidence as of 2026-07-27 (M3 trivial animated gradient, same day)
+
+- Replaced `SceneWebgl`'s placeholder clear-color with a real shader: a fullscreen
+  triangle plus a fragment shader mixing two colors via `sin(uTime * 0.4 + ...)`, run
+  through a `requestAnimationFrame` loop gated by the lifecycle host's `running` state
+  and by `scene.reducedMotion` (static single frame when true, matching the CSS host's
+  reduced-motion behavior).
+- **Bug found and fixed during verification:** the canvas's WebGL drawing-buffer size
+  was only resynced via a `window.resize` listener, which doesn't fire for all
+  viewport-size changes — caught live (`clientWidth`/`clientHeight` updated correctly,
+  but `canvas.width`/`canvas.height`, the actual render resolution, stayed stale after
+  a viewport resize). Fixed by switching to a `ResizeObserver` on the canvas itself
+  (the correct API — reacts to any layout-driven size change), which also repaints
+  immediately using the last-known animation time so paused/reduced-motion scenes stay
+  correctly sized.
+- **What was verified live:** shader math at `uTime=0` (`gl.readPixels` matched the
+  hand-computed color to the pixel — colorB dominant near the initial sine peak);
+  lifecycle `running`/`paused` state gating (force-toggled `document.hidden`, confirmed
+  `canvas.dataset.rendererState` and paint behavior followed); initial mount-time
+  canvas sizing correct at 1440×900 and 320×700; no console errors at either viewport.
+- **What could not be verified live, and why:** continuous animation frames and
+  post-mount resize repainting. This specific sandboxed browser pane does not
+  composite frames at all (established from the very first screenshot attempt this
+  session) — as a direct consequence, neither `requestAnimationFrame` nor
+  `ResizeObserver` callbacks fire in it, confirmed by two direct tests: a raw
+  `ResizeObserver` on the canvas never fired even for a manual `canvas.style.width`
+  change, and a raw `requestAnimationFrame` frame-counting loop never completed within
+  30 seconds. This is an environment constraint of this specific tool, not a known
+  code defect — both APIs used are standard and well-supported, and the logic was
+  verified by direct code review.
+- Full validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (6 files, 15
+  tests — unchanged; this is browser/GPU rendering logic, not practically unit
+  testable without a real WebGL context), `pnpm build`, `pnpm test:consumer`. Library
+  artifact size unchanged (2.26 kB).
+
 ## Risks and blockers
 
-- No actual WebGL rendering content exists yet (shaders, geometry, a drawn scene) —
-  only a placeholder clear-color paint. This is the next slice.
+- Continuous animation and resize-repaint behavior in `SceneWebgl` is verified by code
+  review, not by live observation, due to the sandboxed tool environment's
+  non-compositing browser pane (see evidence above). Worth a spot-check in a real
+  browser (not this tool) before this is treated as fully proven.
+- Visual parity with the CSS scene (matrix rain, portrait/lighting look) is
+  intentionally not attempted yet — this was scoped as a "trivial" gradient.
 - The `Scene` → `SceneWebgl`/`SceneFallback` branch decision itself has no automated
-  test (no jsdom/browser-mode Vitest project exists) — verified only by the manual
-  live-browser check above (both branches), which is repeatable but not automated.
-  Consistent with the existing accepted gap: no automated real-DOM test coverage
-  anywhere in this repo yet (see M5 scope).
+  test (no jsdom/browser-mode Vitest project exists) — verified only by manual
+  live-browser checks, which are repeatable but not automated. Consistent with the
+  existing accepted gap: no automated real-DOM test coverage anywhere in this repo yet
+  (see M5 scope).
 - Reduced-motion behavior is implemented in CSS and renderer selection, but automated
   browser-emulation coverage does not exist; the lifecycle host's real
   `browserEnvironment()` path (actual `window.document`/`IntersectionObserver`) has no
@@ -133,7 +172,5 @@ drifted from what the code actually does.
 
 ## Exact next task
 
-The WebGL lifecycle scaffold and its end-to-end wiring are both done. See
-`NEXT_TASK.md` for the proposed next M3 slice: actual WebGL rendering content
-(shaders/geometry) behind the now-working mount point — not started; awaiting
-confirmation.
+The WebGL lifecycle scaffold, its wiring, and a trivial animated gradient are all
+done. See `NEXT_TASK.md` for proposed next steps — not started; awaiting direction.

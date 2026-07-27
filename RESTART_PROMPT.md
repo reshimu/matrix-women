@@ -34,11 +34,19 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   `src/renderer/browser/environment.ts` (used by both hosts, no behavior change to the
   CSS host).
 - **(2026-07-27, M3 wiring, Option B)** `src/components/Scene.tsx` now runs
-  `selectRenderer` with live capability detection and mounts `SceneWebgl` (real canvas
-  + working `WebGLRenderingContext` + `createWebglRendererHost`, placeholder
-  clear-color paint only) or `SceneFallback`. `main.tsx` mounts `<Scene>`. Both
-  branches confirmed live in a real browser (WebGL via `gl.readPixels` pixel check;
-  CSS fallback via a temporary forced-false override, reverted before commit).
+  `selectRenderer` with live capability detection and mounts `SceneWebgl` or
+  `SceneFallback`. `main.tsx` mounts `<Scene>`. Both branches confirmed live in a real
+  browser.
+- **(2026-07-27, M3 trivial animated gradient)** `SceneWebgl` now renders a real
+  shader (fullscreen triangle + `sin(uTime*0.4+...)` two-color mix), animating via
+  `requestAnimationFrame` only while the lifecycle host is `running` and only when
+  `scene.reducedMotion` is false. Canvas resizing uses a `ResizeObserver` (fixed from
+  an initial `window.resize`-listener bug that left the drawing-buffer size stale after
+  a viewport change). **Caveat:** continuous animation/resize behavior verified by
+  code review only — this session's browser-pane tool doesn't composite frames, so
+  neither `requestAnimationFrame` nor `ResizeObserver` fire in it (confirmed
+  directly). Recommend a real-browser spot-check before treating that part as fully
+  proven.
 - Last full validation passed 2026-07-27: typecheck, lint, **6 Vitest files / 15
   tests**, consumer fixture, demo build, and library build. Library artifact size
   unchanged (2.26 kB), confirming none of the new browser-only code leaks into the
@@ -46,12 +54,12 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
 
 ## Exact next task
 
-M2 is done; the WebGL lifecycle scaffold and its wiring into `selectRenderer`/`Scene`
-are both done. Proposed next slice (not started, needs confirmation): give the WebGL
-mount point actual rendering content (shaders/geometry) driven by `SceneConfig`,
-respecting the lifecycle host's paused/context-lost states and reduced-motion. Full
-done-criteria in `NEXT_TASK.md`. Update all project records and this restart pack with
-factual validation evidence when done.
+M2 is done; the WebGL lifecycle scaffold, its wiring into `selectRenderer`/`Scene`, and
+a trivial animated gradient are all done. No single obvious next task — see
+`NEXT_TASK.md` for four candidate directions (visual parity, config-driven WebGL
+composition, a real-browser spot-check of the animation/resize plumbing, or moving on
+to other roadmap gaps). Update all project records and this restart pack with factual
+validation evidence when done.
 
 ## Non-negotiables
 
@@ -64,9 +72,11 @@ factual validation evidence when done.
 
 ## Known risks
 
-- WebGL renderer has a working lifecycle contract and is correctly wired into
-  `selectRenderer`/`Scene`, but has no actual rendering content yet — the mounted
-  canvas only clears to a placeholder color. That's the next slice.
+- WebGL renderer's continuous-animation and resize-repaint behavior is verified by
+  code review, not live observation (see caveat above) — worth confirming in a real
+  browser before relying on it further.
+- Visual parity between the WebGL and CSS scenes is not attempted — intentionally
+  scoped as "trivial" for now.
 - The `Scene` branch decision (webgl vs. css) has no automated test — verified only by
   manual live-browser checks (repeatable, but not run in CI).
 - Builder round-trip, Next.js fixture, real-DOM/browser regression tests (current

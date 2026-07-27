@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-07-27 — M3 trivial animated gradient
+
+- Replaced `SceneWebgl`'s placeholder clear-color with a real shader: a fullscreen
+  triangle vertex shader and a fragment shader mixing two colors via
+  `sin(uTime * 0.4 + ...)`, animated through `requestAnimationFrame`, gated to only
+  run while the lifecycle host reports `running` and only when `scene.reducedMotion`
+  is false (a single static frame otherwise).
+- **Bug found and fixed during verification:** the canvas's WebGL drawing-buffer size
+  was only kept in sync via a `window.resize` listener, which doesn't fire for all
+  viewport-size changes — caught live (CSS layout size updated, actual render
+  resolution did not). Fixed by switching to a `ResizeObserver` on the canvas element,
+  the correct API for this, which also immediately repaints at the last-known
+  animation time so paused/reduced-motion scenes stay correctly sized after a resize.
+- Verified live: shader math via `gl.readPixels` (matched hand-computed color),
+  lifecycle running/paused gating (via forced `document.hidden` toggling), and
+  mount-time canvas sizing at 1440×900 and 320×700.
+- **Verification gap, stated plainly:** could not observe continuous animation frames
+  or post-mount resize repainting live, because this session's browser-pane tool does
+  not composite frames at all — confirmed directly (a raw `ResizeObserver` never fired
+  even for a manual style change; a raw `requestAnimationFrame` counter never
+  completed in 30s). This is a tool-environment limitation, not a known defect;
+  flagged in `NEXT_TASK.md` as worth a real-browser spot-check.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (6 files / 15 tests,
+  unchanged), `pnpm build`, `pnpm test:consumer` all passed. Library artifact size
+  unchanged (2.26 kB).
+
 ## 2026-07-27 — M3 WebGL wiring (Option B)
 
 - Added `src/components/Scene.tsx`: a composition root that detects
