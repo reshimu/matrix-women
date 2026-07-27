@@ -184,11 +184,42 @@ flagged above. Findings:
   (`pnpm dev`, open `http://localhost:5173`, resize the window, watch) would close
   this completely, but is not required to have high confidence in the implementation.
 
+## Evidence as of 2026-07-27 (M3 config-driven WebGL composition, same day)
+
+- Added `src/renderer/webglUniforms.ts` (`deriveWebglUniforms`, pure, tested — 4
+  tests): mirrors `selectActiveLayers` by reducing active layers into four shader
+  uniforms (`glowIntensity`, `rainDensity`, `portraitOpacity`, `sparkle`), each zeroed
+  when its layer isn't active (e.g. `effects.glow: false` zeroes `glowIntensity` even
+  if a `lighting` layer is configured).
+- `SceneWebgl`'s fragment shader now uses these uniforms: a radial glow scaled by
+  `uGlowIntensity`, gradient oscillation speed scaled by `uRainDensity`, overall
+  brightness scaled by `uPortraitOpacity`, and procedural sparkle scaled by
+  `uSparkle`. Uniforms are read from a ref kept current via `useMemo` + an effect (not
+  captured once at mount), so config changes take effect live without restarting the
+  WebGL context; the static/reduced-motion branch also repaints on config changes.
+- **Live-verified in Claude in Chrome (real browser):** exact pixel readback at the
+  shader's glow center matched hand-computed shader math (`[81, 193, 169]`), and a far
+  corner matched the pre-existing gradient baseline (`[23, 88, 81]`). Then temporarily
+  set `effects.glow: false` in `main.tsx`, reloaded, confirmed the glow-center pixel
+  dropped to match the far-corner baseline (`[23, 88, 80]`) — proving the effects
+  toggle actually gates WebGL rendering, not just CSS. Reverted before final
+  validation and commit (`git diff src/main.tsx` confirmed clean).
+- **Bug caught and fixed during implementation:** an ESLint `react-hooks/refs` rule
+  flagged mutating a ref directly during render (`uniformsRef.current = ...` at the
+  top of the component). Fixed by deriving uniforms via `useMemo` and syncing the ref
+  inside an effect instead — a real lint catch, not a stylistic nit.
+- Full validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (**7 files, 19
+  tests**, up from 6/15), `pnpm build`, `pnpm test:consumer`. Library artifact size
+  unchanged (2.26 kB) — `webglUniforms.ts` is demo-only, not re-exported publicly.
+
 ## Risks and blockers
 
 - Only a literal human-eyes-on-screen check remains unverified for the WebGL
   animation/resize behavior — every other verification path available to automated
-  tooling in this session has been exhausted and passed. See evidence above.
+  tooling in this session has been exhausted and passed. See earlier evidence.
+- The WebGL scene's visual vocabulary (glow/gradient/sparkle) doesn't visually
+  resemble the CSS scene (matrix rain, portrait silhouette) — intentionally deferred,
+  not attempted this slice.
 - Visual parity with the CSS scene (matrix rain, portrait/lighting look) is
   intentionally not attempted yet — this was scoped as a "trivial" gradient.
 - The `Scene` → `SceneWebgl`/`SceneFallback` branch decision itself has no automated

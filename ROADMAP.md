@@ -5,7 +5,7 @@
 | M0 | Audit repository and establish governance; use explicit greenfield authorization when no prototype exists | Complete — authorization recorded 2026-07-26 |
 | M1 | Establish package boundaries, renderer-independent scene schema, and Vite builder baseline | Complete — separate library artifact and consumer fixture validated |
 | M2 | Implement core scene composition and dependable non-WebGL fallback | Complete — CSS fallback lifecycle host and config-driven scene composition (layers + effects + format) implemented and tested; validated 2026-07-27. |
-| M3 | Add progressive WebGL enhancement, lifecycle management, and constrained-device behavior | In progress — renderer lifecycle contract, end-to-end wiring, and a trivial animated-gradient shader implemented; shader math and mount-time sizing verified live, continuous animation/resize behavior verified by code review only (see M3 gradient entry below for why). |
+| M3 | Add progressive WebGL enhancement, lifecycle management, and constrained-device behavior | In progress — renderer lifecycle contract, end-to-end wiring, an animated shader now driven by `scene.layers`/`scene.effects` (mirroring `selectActiveLayers`), and a real-Chrome spot-check are all done. No visual parity with the CSS scene attempted; constrained-device behavior not re-evaluated beyond `selectRenderer`. |
 | M4 | Build responsive builder, configuration round-trip, and documented public API | Pending |
 | M5 | Complete automated/browser/visual/accessibility/performance validation and release audit | Pending |
 
@@ -117,3 +117,31 @@ well-documented form with no known edge case that would behave differently in a 
 visible browser tab. Only a literal human-eyes-on-screen check (opening
 `http://localhost:5173` in an actual visible window and watching it for ~10 seconds)
 remains outside what automated tooling in this session could verify.
+
+## M3 config-driven WebGL composition (2026-07-27, same day)
+
+Added `src/renderer/webglUniforms.ts` (`deriveWebglUniforms`, pure and tested — 4
+tests) mirroring `selectActiveLayers`: it reduces `selectActiveLayers(scene)` into four
+shader uniforms — `glowIntensity` (from the `lighting` layer's `intensity`×`opacity`,
+zeroed if `effects.glow` is off), `rainDensity` (from `code-rain`'s `density`×
+`opacity`), `portraitOpacity` (from the `portrait` layer's `opacity`), and `sparkle`
+(from a `particles` layer's `count`/200, capped at 1, ×`opacity`). `SceneWebgl`'s
+fragment shader now uses these: a radial glow at a fixed screen position scaled by
+`uGlowIntensity`, the base gradient's oscillation speed scaled by `uRainDensity`, an
+overall brightness lift scaled by `uPortraitOpacity`, and procedural sparkle dots
+scaled by `uSparkle`. Uniform values are read from a ref updated via `useMemo`/effect
+(not captured in the mount-time closure), so config changes take effect without
+restarting the WebGL context; a static (reduced-motion) scene also repaints
+immediately when config changes, not just when animating.
+
+Live-verified in Claude in Chrome (real browser): read exact pixel values at the
+shader's glow center and a far corner, matching hand-computed shader math to the
+pixel (`[81, 193, 169]` at glow center vs. `[23, 88, 81]` far corner, for the default
+scene). Then temporarily set `effects.glow: false` in `main.tsx`, reloaded, and
+confirmed the glow-center pixel dropped to match the far-corner baseline exactly
+(`[23, 88, 80]` ≈ `[23, 88, 81]`) — proving the effects toggle actually gates WebGL
+output, not just CSS output. Reverted the override before final validation and commit.
+Full validation (`typecheck`/`lint`/`test`: 7 files/19 tests, up from 6/15/`build`/
+`test:consumer`) passed. Library artifact size unchanged (2.26 kB) —
+`webglUniforms.ts` is imported only by the demo-only `SceneWebgl`, not re-exported from
+`src/index.ts`.

@@ -53,6 +53,15 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   positively confirms the lifecycle host's pause-on-hidden logic tracks genuine
   browser state. Only a literal human-eyes-on-screen check remains outside what any
   available tool could verify.
+- **(2026-07-27, M3 config-driven WebGL composition)** Added
+  `src/renderer/webglUniforms.ts` (`deriveWebglUniforms`, pure, tested) mirroring
+  `selectActiveLayers`: reduces active layers into 4 shader uniforms (glow intensity,
+  rain-speed density, portrait brightness, sparkle), each zeroed when its effect flag
+  is off. `SceneWebgl`'s shader now uses these. Live-verified in Claude in Chrome via
+  exact pixel readback, including confirming an `effects.glow: false` override
+  actually zeroes the glow pixel (tested by temporarily editing `main.tsx`, then
+  reverting before commit). Caught a real `react-hooks/refs` lint error along the way
+  (mutating a ref during render) and fixed it via `useMemo` + effect.
 - Last full validation passed 2026-07-27: typecheck, lint, **6 Vitest files / 15
   tests**, consumer fixture, demo build, and library build. Library artifact size
   unchanged (2.26 kB), confirming none of the new browser-only code leaks into the
@@ -60,11 +69,12 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
 
 ## Exact next task
 
-M2 is done; the WebGL lifecycle scaffold, its wiring, a trivial animated gradient, and
-a real-browser spot-check are all done. No single obvious next task — see
-`NEXT_TASK.md` for three candidate directions (visual parity, config-driven WebGL
-composition, or moving on to other roadmap gaps). Update all project records and this
-restart pack with factual validation evidence when done.
+M2 is done. M3's WebGL path is complete end-to-end: lifecycle → wiring → animated
+shader → real-browser spot-check → config-driven composition. No single obvious next
+task — see `NEXT_TASK.md` for candidate directions (visual parity with the CSS scene,
+or moving on to other roadmap gaps like Next.js consumption proof or M4 builder work).
+Update all project records and this restart pack with factual validation evidence when
+done.
 
 ## Non-negotiables
 
@@ -82,8 +92,9 @@ restart pack with factual validation evidence when done.
   been exhausted and passed (see spot-check evidence above). Low risk: both APIs used
   are standard, well-documented, and the suspension observed is confirmed to be a
   tooling/viewport limitation, not a code issue.
-- Visual parity between the WebGL and CSS scenes is not attempted — intentionally
-  scoped as "trivial" for now.
+- Visual parity between the WebGL and CSS scenes is not attempted — the WebGL scene
+  uses an abstract gradient/glow/sparkle vocabulary, not a literal recreation of the
+  matrix-rain/portrait-silhouette CSS look.
 - The `Scene` branch decision (webgl vs. css) has no automated test — verified only by
   manual live-browser checks (repeatable, but not run in CI).
 - Builder round-trip, Next.js fixture, real-DOM/browser regression tests (current

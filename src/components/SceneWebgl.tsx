@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import type { SceneConfig } from '../scene'
 import { createWebglRendererHost } from '../renderer/browser/webglRendererHost'
+import { deriveWebglUniforms } from '../renderer/webglUniforms'
+import type { WebglSceneUniforms } from '../renderer/webglUniforms'
 
 type SceneWebglProps = { scene: SceneConfig }
 
@@ -15,12 +17,30 @@ const FRAGMENT_SHADER_SOURCE = `
 precision mediump float;
 uniform vec2 uResolution;
 uniform float uTime;
+uniform float uGlowIntensity;
+uniform float uRainDensity;
+uniform float uPortraitOpacity;
+uniform float uSparkle;
+
 void main() {
   vec2 uv = gl_FragCoord.xy / uResolution;
   vec3 colorA = vec3(0.02, 0.08, 0.09);
   vec3 colorB = vec3(0.09, 0.35, 0.32);
-  float mixAmount = 0.5 + 0.5 * sin(uTime * 0.4 + uv.x * 2.0 + uv.y * 1.3);
-  gl_FragColor = vec4(mix(colorA, colorB, mixAmount), 1.0);
+  float wave = sin(uTime * (0.2 + uRainDensity * 0.6) + uv.x * 2.0 + uv.y * 1.3);
+  float mixAmount = 0.5 + 0.5 * wave;
+  vec3 color = mix(colorA, colorB, mixAmount);
+
+  vec2 glowCenter = vec2(0.65, 0.42);
+  float glow = uGlowIntensity * smoothstep(0.5, 0.0, distance(uv, glowCenter));
+  color += glow * vec3(0.55, 0.98, 0.83);
+
+  color *= mix(0.85, 1.0, uPortraitOpacity);
+
+  float noise = fract(sin(dot(uv * 40.0, vec2(12.9898, 78.233))) * 43758.5453);
+  float sparkle = step(0.995 - uSparkle * 0.03, noise) * uSparkle;
+  color += sparkle;
+
+  gl_FragColor = vec4(color, 1.0);
 }
 `
 
@@ -54,6 +74,14 @@ function createGradientProgram(gl: WebGLRenderingContext): WebGLProgram | null {
 
 export function SceneWebgl({ scene }: SceneWebglProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const uniforms = useMemo(() => deriveWebglUniforms(scene), [scene])
+  const uniformsRef = useRef<WebglSceneUniforms>(uniforms)
+  const paintNowRef = useRef<((elapsedSeconds: number) => void) | null>(null)
+
+  useEffect(() => {
+    uniformsRef.current = uniforms
+    if (scene.reducedMotion) paintNowRef.current?.(0)
+  }, [uniforms, scene.reducedMotion])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -65,6 +93,10 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
     let aPositionLocation = -1
     let uResolutionLocation: WebGLUniformLocation | null = null
     let uTimeLocation: WebGLUniformLocation | null = null
+    let uGlowIntensityLocation: WebGLUniformLocation | null = null
+    let uRainDensityLocation: WebGLUniformLocation | null = null
+    let uPortraitOpacityLocation: WebGLUniformLocation | null = null
+    let uSparkleLocation: WebGLUniformLocation | null = null
 
     if (gl && program && positionBuffer) {
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
@@ -72,6 +104,10 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
       aPositionLocation = gl.getAttribLocation(program, 'aPosition')
       uResolutionLocation = gl.getUniformLocation(program, 'uResolution')
       uTimeLocation = gl.getUniformLocation(program, 'uTime')
+      uGlowIntensityLocation = gl.getUniformLocation(program, 'uGlowIntensity')
+      uRainDensityLocation = gl.getUniformLocation(program, 'uRainDensity')
+      uPortraitOpacityLocation = gl.getUniformLocation(program, 'uPortraitOpacity')
+      uSparkleLocation = gl.getUniformLocation(program, 'uSparkle')
     }
 
     let lastElapsedSeconds = 0
@@ -79,12 +115,17 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
     const paint = (elapsedSeconds: number) => {
       lastElapsedSeconds = elapsedSeconds
       if (!gl || !program || !positionBuffer) return
+      const uniforms = uniformsRef.current
       gl.useProgram(program)
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
       gl.enableVertexAttribArray(aPositionLocation)
       gl.vertexAttribPointer(aPositionLocation, 2, gl.FLOAT, false, 0, 0)
       gl.uniform2f(uResolutionLocation, canvas.width, canvas.height)
       gl.uniform1f(uTimeLocation, elapsedSeconds)
+      gl.uniform1f(uGlowIntensityLocation, uniforms.glowIntensity)
+      gl.uniform1f(uRainDensityLocation, uniforms.rainDensity)
+      gl.uniform1f(uPortraitOpacityLocation, uniforms.portraitOpacity)
+      gl.uniform1f(uSparkleLocation, uniforms.sparkle)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
 
@@ -115,6 +156,7 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
     resize()
     const resizeObserver = new ResizeObserver(resize)
     resizeObserver.observe(canvas)
+    paintNowRef.current = paint
 
     const host = createWebglRendererHost({
       target: canvas,
@@ -136,6 +178,7 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
     return () => {
       stopAnimating()
       resizeObserver.disconnect()
+      paintNowRef.current = null
       host.dispose()
     }
   }, [scene.reducedMotion])
@@ -146,7 +189,7 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
       <div className="scene__content">
         <p className="scene__eyebrow">{scene.eyebrow}</p>
         <h1 id="scene-title">{scene.title}</h1>
-        <p className="scene__body">A WebGL-enhanced scene with a lightweight animated gradient.</p>
+        <p className="scene__body">A WebGL-enhanced scene composed from the same layer/effect config as the CSS fallback.</p>
         <button type="button" className="scene__button">Explore the system <span aria-hidden="true">→</span></button>
       </div>
     </section>

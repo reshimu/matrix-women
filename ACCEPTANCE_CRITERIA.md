@@ -51,7 +51,13 @@
       continuous-frame and post-mount-resize behavior verified by code review only —
       this sandboxed browser pane doesn't composite frames, so neither
       `requestAnimationFrame` nor `ResizeObserver` fire in it (confirmed directly).
+- [x] The WebGL scene is config-driven the same way the CSS scene is: `deriveWebglUniforms`
+      mirrors `selectActiveLayers`, so `scene.layers`/`scene.effects` measurably change
+      shader output (glow intensity, gradient speed, brightness, sparkle). Verified
+      live via exact pixel-value checks in a real browser, including confirming an
+      `effects.glow: false` override zeroes the glow contribution.
 - [ ] Visual parity with the CSS scene (matrix rain, portrait, lighting) — explicitly
-      out of scope for this "trivial" gradient slice.
+      out of scope; the WebGL scene uses an abstract gradient/glow/sparkle vocabulary,
+      not a literal recreation of the CSS visuals.
 - [ ] Constrained-device behavior beyond what `selectRenderer` already does (steering
       constrained devices to `css`) — not re-evaluated in this slice.

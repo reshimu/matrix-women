@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-07-27 — M3 config-driven WebGL composition
+
+- Added `src/renderer/webglUniforms.ts` (`deriveWebglUniforms`, pure and tested — 4
+  tests) mirroring `selectActiveLayers`: reduces `selectActiveLayers(scene)` into 4
+  shader uniforms — glow intensity (from a `lighting` layer's `intensity`×`opacity`),
+  rain density (from `code-rain`'s `density`×`opacity`, driving the gradient's
+  oscillation speed), portrait opacity (overall brightness), and sparkle (from a
+  `particles` layer's `count`/200 capped at 1, ×`opacity`) — each zeroed when its
+  layer isn't active (effect flag off).
+- `SceneWebgl`'s fragment shader now consumes these: a radial glow at a fixed screen
+  position, gradient speed, brightness, and procedural sparkle dots all respond to
+  `scene.layers`/`scene.effects`, not just `reducedMotion` as before.
+- Uniforms are recomputed via `useMemo` and synced to a ref inside an effect (not
+  captured once at mount), so config changes take effect live without restarting the
+  WebGL context; the static/reduced-motion paint path also repaints when config
+  changes, not just when animating.
+- **Bug caught by lint, not by me:** ESLint's `react-hooks/refs` rule flagged mutating
+  a ref directly during render. Fixed by moving the uniform derivation into `useMemo`
+  and syncing the ref inside an effect.
+- Live-verified in Claude in Chrome (real browser): exact pixel readback at the
+  shader's glow center matched hand-computed shader math (`[81, 193, 169]`); a far
+  corner matched the existing gradient baseline (`[23, 88, 81]`). Temporarily set
+  `effects.glow: false` in `main.tsx`, reloaded, confirmed the glow-center pixel
+  dropped to match the far-corner baseline (`[23, 88, 80]`) — proving the effects
+  toggle gates WebGL output, not just CSS — then reverted before final validation and
+  commit.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (7 files / 19 tests, up from
+  6/15), `pnpm build`, `pnpm test:consumer` all passed. Library artifact size
+  unchanged (2.26 kB).
+
 ## 2026-07-27 — Real-browser spot-check of WebGL animation/resize
 
 - Re-verified the previous slice's WebGL animation/resize plumbing in Claude in Chrome
