@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-27 — Recon and record reconciliation
+
+- Ran a full recon pass (no product code changed): re-verified typecheck, lint, tests
+  (4 files / 7 tests), demo build, library build, and the consumer fixture all pass;
+  read every file in `src/` for stubs, mocks, TODOs, or placeholder logic (none found).
+- Discovered `ROADMAP.md`, `NEXT_TASK.md`, and `PROJECT_STATE.md` had drifted from
+  actual code state: the browser-only CSS renderer lifecycle host
+  (`src/renderer/browser/cssRendererHost.ts`) was already implemented and tested but
+  still described as pending work in all three files.
+- Discovered the real remaining M2 gap: `SceneFallback` renders fixed hardcoded markup
+  and does not read `scene.layers` or `scene.effects` from the validated `SceneConfig`
+  — the schema and validation exist and are tested, but nothing in the render path
+  consumes them yet.
+- Corrected `ROADMAP.md` (M2 status), `NEXT_TASK.md` (real next task), and this file's
+  companion `PROJECT_STATE.md` to reflect verified reality rather than assumed
+  progress.
+- Initialized a Git repository for the first time (none existed previously), merged in
+  a pre-existing remote `README.md`, and pushed to `github.com/reshimu/matrix-women`.
+
 ## 2026-07-26 — M0 governance initialization
 
 - Audited the supplied workspace: it is empty and is not a Git repository.
