@@ -1,7 +1,7 @@
 # Project state
 
-**Current milestone:** M1 and M2 **complete**. M3 (progressive WebGL enhancement) has
-not started.
+**Current milestone:** M1 and M2 **complete**. M3 (progressive WebGL enhancement) —
+**in progress**: lifecycle contract done, no rendering content yet.
 
 ## Evidence as of 2026-07-27 (reconciliation pass)
 
@@ -68,11 +68,32 @@ drifted from what the code actually does.
   `scene.effects` now actually control rendered output; `hero`/`portrait`/`square`
   produce real, distinct layouts.
 
+## Evidence as of 2026-07-27 (M3 lifecycle scaffold, same day)
+
+- Extracted `src/renderer/browser/environment.ts` (shared `BrowserLifecycleEnvironment`
+  types + default factory) out of `cssRendererHost.ts` to avoid duplicating it for the
+  new host — `cssRendererHost.ts` behavior is unchanged, verified by its existing tests
+  still passing unmodified.
+- Added `src/renderer/browser/webglRendererHost.ts`: same `start`/`pause`/`resume`/
+  `dispose`/`getState` shape as the CSS host, plus a `context-lost` state driven by
+  `webglcontextlost`/`webglcontextrestored` events that overrides visibility/
+  intersection-driven pausing until restored.
+- 4 new unit tests in `webglRendererHost.test.ts`: hidden/offscreen pausing,
+  context-lost entry and recovery, context-lost surviving a visibility/intersection
+  change, and manual pause/resume/dispose cleanup.
+- Full validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (**6 files, 15
+  tests**), `pnpm build`, `pnpm test:consumer`. Library artifact size unchanged
+  (2.26 kB) — confirms the new WebGL code isn't leaking into the public entry
+  (`src/index.ts` doesn't import it), matching ADR-0003.
+- No browser-pane inspection performed for this slice: nothing renders yet. The host
+  is a lifecycle scaffold only, not wired into `selectRenderer` or `SceneFallback`, and
+  has no shaders/geometry/actual WebGL drawing behind it.
+
 ## Risks and blockers
 
-- No browser-only *enhanced* (WebGL) renderer exists yet; its lifecycle, context-loss
-  recovery, and constrained-device behavior are unimplemented (M3 scope — correctly
-  still pending, next up per `ROADMAP.md`).
+- No actual WebGL rendering content exists yet (shaders, geometry, a drawn scene) —
+  only the lifecycle contract. The host is not wired into `selectRenderer` or
+  `SceneFallback`, so selecting `webgl` capability today still renders nothing new.
 - Reduced-motion behavior is implemented in CSS and renderer selection, but automated
   browser-emulation coverage does not exist; the lifecycle host's real
   `browserEnvironment()` path (actual `window.document`/`IntersectionObserver`) has no
@@ -85,6 +106,6 @@ drifted from what the code actually does.
 
 ## Exact next task
 
-M2 is complete. See `NEXT_TASK.md` for the proposed first M3 slice (defining the WebGL
-renderer lifecycle contract) — not started; awaiting confirmation before beginning a
-new milestone's implementation work.
+The WebGL lifecycle scaffold is done. See `NEXT_TASK.md` for the proposed next M3
+slice (actual minimal WebGL rendering content, or wiring the host into
+`selectRenderer`/`SceneFallback`) — not started; awaiting confirmation.

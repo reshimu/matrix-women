@@ -31,3 +31,19 @@
 - [x] Browser-only CSS renderer lifecycle host (start/pause/resume/dispose) pauses on hidden-document/offscreen states with deterministic listener/observer cleanup — unit tested.
 - [ ] Real-DOM/browser-environment automated test coverage for the lifecycle host (current tests exercise only an injected fake environment; the real `browserEnvironment()` path has manual-only verification). Deferred to M5 validation closeout — see `RISKS.md`.
 - [ ] Additional scene formats/layer combinations demoed in the actual demo app, not just proven in isolation (`main.tsx` still mounts only the default hero scene). Deferred — not required for M2's composition-correctness goal.
+
+## M3 — progressive WebGL enhancement (in progress)
+
+- [x] WebGL renderer lifecycle contract mirrors the CSS host: `start`/`pause`/
+      `resume`/`dispose`/`getState`, pausing on hidden-document/offscreen states.
+- [x] WebGL context loss (`webglcontextlost`) and restoration
+      (`webglcontextrestored`) are handled explicitly, taking precedence over
+      visibility/intersection-driven pausing — unit tested.
+- [x] No WebGL-specific code leaks into `src/index.ts`; verified the library artifact
+      size is unchanged (2.26 kB) after adding the host.
+- [ ] Actual WebGL rendering content (shaders, geometry, a rendered scene) — not
+      started.
+- [ ] Wiring into `selectRenderer`/`SceneFallback` so `webgl` capability actually
+      renders something — not started.
+- [ ] Constrained-device behavior beyond what `selectRenderer` already does (steering
+      constrained devices to `css`) — not re-evaluated in this slice.

@@ -1,57 +1,77 @@
 import type { BrowserLifecycleEnvironment, Observer } from './environment'
 import { createDefaultBrowserEnvironment } from './environment'
 
-export type { BrowserLifecycleEnvironment } from './environment'
+export type WebglRendererLifecycleState = 'inactive' | 'running' | 'paused' | 'context-lost' | 'disposed'
 
-export type RendererLifecycleState = 'inactive' | 'running' | 'paused' | 'disposed'
+type ContextEvent = Readonly<{ preventDefault?(): void }>
+type ContextEventType = 'webglcontextlost' | 'webglcontextrestored'
 
-type LifecycleTarget = HTMLElement & { dataset: DOMStringMap }
+type WebglLifecycleTarget = {
+  dataset: DOMStringMap
+  addEventListener(type: ContextEventType, listener: (event: ContextEvent) => void): void
+  removeEventListener(type: ContextEventType, listener: (event: ContextEvent) => void): void
+}
 
-export type CssRendererHostOptions = Readonly<{
-  target: LifecycleTarget
+export type WebglRendererHostOptions = Readonly<{
+  target: WebglLifecycleTarget
   environment?: BrowserLifecycleEnvironment
-  onStateChange?(state: RendererLifecycleState): void
+  onStateChange?(state: WebglRendererLifecycleState): void
 }>
 
-export type CssRendererHost = Readonly<{
+export type WebglRendererHost = Readonly<{
   start(): void
   pause(): void
   resume(): void
   dispose(): void
-  getState(): RendererLifecycleState
+  getState(): WebglRendererLifecycleState
 }>
 
-export function createCssRendererHost(options: CssRendererHostOptions): CssRendererHost {
+export function createWebglRendererHost(options: WebglRendererHostOptions): WebglRendererHost {
   const environment = options.environment ?? createDefaultBrowserEnvironment()
-  let state: RendererLifecycleState = 'inactive'
+  let state: WebglRendererLifecycleState = 'inactive'
   let isIntersecting = true
   let manuallyPaused = false
+  let contextLost = false
   let observer: Observer | undefined
 
-  const applyState = (next: RendererLifecycleState) => {
+  const applyState = (next: WebglRendererLifecycleState) => {
     if (state === next) return
     state = next
-    options.target.classList.toggle('scene--paused', state === 'paused')
     options.target.dataset.rendererState = state
     options.onStateChange?.(state)
   }
 
   const synchronize = () => {
     if (state === 'inactive' || state === 'disposed') return
+    if (contextLost) {
+      applyState('context-lost')
+      return
+    }
     applyState(manuallyPaused || environment.document.hidden || !isIntersecting ? 'paused' : 'running')
   }
 
   const onVisibilityChange = () => synchronize()
+  const onContextLost = (event: ContextEvent) => {
+    event.preventDefault?.()
+    contextLost = true
+    synchronize()
+  }
+  const onContextRestored = () => {
+    contextLost = false
+    synchronize()
+  }
 
   return {
     start() {
       if (state === 'disposed' || state !== 'inactive') return
       environment.document.addEventListener('visibilitychange', onVisibilityChange)
+      options.target.addEventListener('webglcontextlost', onContextLost)
+      options.target.addEventListener('webglcontextrestored', onContextRestored)
       observer = environment.createIntersectionObserver((entries) => {
         isIntersecting = entries.some((entry) => entry.isIntersecting)
         synchronize()
       })
-      observer.observe(options.target)
+      observer.observe(options.target as unknown as Element)
       applyState('running')
       synchronize()
     },
@@ -68,8 +88,9 @@ export function createCssRendererHost(options: CssRendererHostOptions): CssRende
     dispose() {
       if (state === 'disposed') return
       environment.document.removeEventListener('visibilitychange', onVisibilityChange)
+      options.target.removeEventListener('webglcontextlost', onContextLost)
+      options.target.removeEventListener('webglcontextrestored', onContextRestored)
       observer?.disconnect()
-      options.target.classList.remove('scene--paused')
       options.target.dataset.rendererState = 'disposed'
       applyState('disposed')
     },

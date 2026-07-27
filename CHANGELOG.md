@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-07-27 — M3 WebGL renderer lifecycle scaffold
+
+- Extracted `src/renderer/browser/environment.ts` (shared `BrowserLifecycleEnvironment`
+  types and default factory) out of `cssRendererHost.ts` so the new WebGL host doesn't
+  duplicate it; `cssRendererHost.ts` behavior is unchanged and its existing tests still
+  pass unmodified.
+- Added `src/renderer/browser/webglRendererHost.ts`: a lifecycle host mirroring the
+  CSS host's `start`/`pause`/`resume`/`dispose`/`getState` shape, plus a
+  `context-lost` state driven by `webglcontextlost`/`webglcontextrestored` that takes
+  precedence over visibility/intersection-driven pausing until restored.
+- Added 4 unit tests covering hidden/offscreen pausing, context-loss entry/recovery,
+  context-loss surviving a visibility change, and manual pause/resume/dispose cleanup.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (6 files / 15 tests, up from
+  5/11), `pnpm build`, `pnpm test:consumer` all passed. Library artifact size unchanged
+  (2.26 kB), confirming no browser-only code leaked into the public entry.
+- Deliberately scoped to the lifecycle contract only: no shaders, geometry, or actual
+  WebGL drawing, and not wired into `selectRenderer`/`SceneFallback`. M3 marked
+  "in progress" in `ROADMAP.md`/`ACCEPTANCE_CRITERIA.md`; two candidate next slices
+  proposed in `NEXT_TASK.md`, pending confirmation before starting.
+
 ## 2026-07-27 — M2 core scene composition
 
 - Added `src/scene/composition.ts` (`selectActiveLayers`, pure and tested) so

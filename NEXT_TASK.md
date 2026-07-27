@@ -1,35 +1,36 @@
 # Next atomic task
 
-M2 (core scene composition and dependable non-WebGL fallback) is **complete** as of
-2026-07-27. `selectActiveLayers` makes `scene.layers`/`scene.effects` actually drive
-render output, and `hero`/`portrait`/`square` produce real distinct layouts. Full
-evidence in `PROJECT_STATE.md` and `ROADMAP.md`.
+The WebGL renderer lifecycle contract is **done** as of 2026-07-27:
+`src/renderer/browser/webglRendererHost.ts` mirrors the CSS host's
+`start`/`pause`/`resume`/`dispose`/`getState` shape, adds a `context-lost` state driven
+by `webglcontextlost`/`webglcontextrestored` that takes precedence over visibility/
+intersection pausing, and is unit tested (4 tests). It is deliberately unwired and
+contains no actual rendering — see `ROADMAP.md`/`PROJECT_STATE.md` for full evidence.
 
-## Proposed next task (M3 kickoff — not started, needs confirmation)
+## Proposed next task (not started, needs confirmation)
 
-**Task:** Define the enhanced (WebGL) renderer's lifecycle contract, mirroring
-`src/renderer/browser/cssRendererHost.ts`'s `start`/`pause`/`resume`/`dispose` shape,
-and implement a minimal WebGL renderer host behind the existing `selectRenderer`
-boundary (`src/renderer/select.ts`). Scope to the *lifecycle scaffold* only — do not
-attempt full visual parity with the CSS scene in this slice.
+Two candidate next slices — pick one, don't do both in one pass:
 
-**Done when:**
-- A `WebglRendererHost` (or equivalently named) module exists under
-  `src/renderer/browser/`, exposing the same `start`/`pause`/`resume`/`dispose`/
-  `getState` shape as the CSS host, with an injectable environment for testing.
-- It handles WebGL context loss (`webglcontextlost`/`webglcontextrestored`) explicitly
-  — this is the one behavior the CSS host has no analog for and is named in
-  `PROJECT_SPEC.md`/`AGENTS.md` as a hard requirement.
-- It pauses on hidden-document/offscreen states, same as the CSS host.
-- No WebGL-specific code leaks into `src/index.ts` (the public library entry stays
-  renderer-independent per ADR-0003).
-- Unit tests cover start/pause/resume/dispose transitions and context-loss/restore,
-  using an injected fake environment (same pattern as `cssRendererHost.test.ts`).
-- Constrained-device behavior (already partially handled by `selectRenderer` steering
-  constrained devices to `css`) is not re-litigated here — this slice is the lifecycle
-  contract only.
+**Option A — Minimal WebGL rendering content.** Give `webglRendererHost` something
+real to drive: a small shader/geometry program that renders a simple version of the
+scene (e.g. an animated gradient or particle field reacting to `SceneConfig`), proving
+the lifecycle contract actually gates real GPU work, not just a state machine.
 
-**Current blocker:** none technical. This starts a new milestone (M3) — confirm before
-implementation begins, since it's a larger and more architecturally novel slice than
-prior M1/M2 work (first browser-only enhancement path, first place WebGL context-loss
-handling is needed).
+**Option B — Wire the host into the selection boundary.** Connect
+`selectRenderer`/`SceneFallback` so that when `webgl` is chosen, something (even a
+placeholder canvas) actually mounts and uses `createWebglRendererHost`, proving the
+end-to-end path from config → renderer selection → mounted WebGL host works, before
+investing in real rendering content.
+
+**Done when (whichever option):**
+- The chosen slice has a clear, narrow deliverable (not both rendering content *and*
+  wiring in the same pass).
+- Constrained-device behavior is not re-litigated — `selectRenderer` already steers
+  constrained devices to `css`.
+- Public library entry (`src/index.ts`) still exposes no browser-only APIs.
+- Validation (`typecheck`/`lint`/`test`/`build`/`test:consumer`) passes, and a visual
+  inspection happens if anything becomes actually renderable in the demo.
+
+**Current blocker:** none technical. Recommend confirming which option before
+starting, since they lead to different follow-on work (Option A grows the renderer's
+visual surface; Option B proves integration plumbing first).
