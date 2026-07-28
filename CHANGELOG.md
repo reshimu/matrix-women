@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-07-28 — Full M4 responsive builder scope
+
+- Added `src/components/builderState.ts`: pure, unit-tested helpers
+  (`createLayer`/`removeLayer`/`moveLayer`/`reorderLayers`/`createScene`/
+  `duplicateScene`) plus `localStorage`-backed `loadBuilderState`/`saveBuilderState`
+  (guarded for SSR, validates every stored scene through `validateScene` so
+  corrupted/old-shape data can't crash the builder — silently dropped instead).
+  18 new unit tests.
+- Rewrote `SceneBuilder.tsx`: multi-scene management (new/switch/duplicate/delete,
+  persisted across reloads), Title/Eyebrow text fields (previously only editable via
+  raw JSON import), and a generic per-layer editor replacing three hardcoded sliders
+  — any layer type can now be added (only offering types not already present),
+  removed, and reordered via native HTML5 drag-and-drop or keyboard-accessible ↑/↓
+  buttons (drag alone isn't keyboard-operable, and `AGENTS.md` requires keyboard
+  access).
+- Added 9 new `SceneBuilder.test.tsx` tests: add/remove a particles layer, move
+  up/down with correct disabled boundaries, new/switch/duplicate/delete scene flows
+  (edits isolated per scene), persistence across a remount, and the existing
+  export→import round-trip still working with the new generic layer model.
+- **Real bug found and fixed during verification:** `src/react.ts` imports the whole
+  `styles.css`, and CSS isn't tree-shaken — `.builder`/`.demo-format` rules (dev-tool
+  only, never exported) were bundled into the *public* `react.css`, inflating it for
+  every consumer. Caught by watching `react.css` grow to 12.98 kB while adding
+  builder-only styles. Fixed by splitting into `src/styles.css` (public, imported by
+  `src/react.ts`) and a new `src/demo.css` (demo-only, imported only by
+  `src/main.tsx`) — `react.css` dropped to 10.08 kB, smaller than before this slice
+  even started.
+- Live-verified in a real browser: add/remove/move/drag-and-drop layer reordering,
+  full multi-scene lifecycle, and `localStorage` persistence surviving an actual page
+  reload. Confirmed no horizontal overflow and correct responsive collapsing at
+  320px width.
+- This resolves `RISK_PERFORMANCE_AUDIT.md`'s R-009 — the last item in the risk
+  register with an open resolution path. Every item (R-001–R-009) is now resolved or
+  an explicitly-accepted Low/Informational item.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15 files/70 tests, up from
+  13/43), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
+  `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass.
+
 ## 2026-07-28 — CI + bundle-size performance budget
 
 - No CI existed for this repo at all until now — every validation command had been

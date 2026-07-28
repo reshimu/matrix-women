@@ -442,3 +442,60 @@ working. Added both a CI workflow and the performance budget in the same slice, 
 Validated: ran the exact full CI sequence locally end-to-end (`typecheck` → `lint` →
 `test` → `build` → `test:consumer` → `test:react-consumer` → `test:nextjs-consumer` →
 `check:bundle-size`) — all pass, 13 files/43 tests unchanged.
+
+## Full M4 responsive builder scope (2026-07-28) — resolves audit R-009
+
+Brought `SceneBuilder.tsx` from the round-trip minimum up to the scope named in
+`ROADMAP.md`'s original M4 outcome and repeated across `NEXT_TASK.md` for multiple
+sessions: "drag/drop layer editing" and "multi-scene management," neither of which
+existed before this.
+
+- Added `src/components/builderState.ts`: pure, unit-tested helpers
+  (`createLayer`, `removeLayer`, `moveLayer`, `reorderLayers`, `createScene`,
+  `duplicateScene`) plus `loadBuilderState`/`saveBuilderState` (localStorage-backed,
+  guarded for `typeof window === 'undefined'`, validates every stored scene through
+  the existing `validateScene` so corrupted/old-shape localStorage data can't crash
+  the builder — it's silently dropped instead). 18 new unit tests, no DOM needed.
+- Rewrote `SceneBuilder.tsx`: a scene switcher (select + New/Duplicate/Delete,
+  persisted to `localStorage` under `matrix-ai-ui:builder-state`), Title/Eyebrow text
+  fields (previously only editable via raw JSON import — a real gap), and a generic
+  per-layer editor replacing the old three hardcoded sliders — any layer type can now
+  be added (only offering types not already present), removed, and reordered via
+  either native HTML5 drag-and-drop (mouse/touch) or keyboard-accessible ↑/↓ buttons
+  (drag-and-drop alone isn't keyboard-operable, and `AGENTS.md` requires keyboard
+  access — this was a deliberate accessibility decision, not an oversight).
+- Added 9 new `SceneBuilder.test.tsx` tests (jsdom + Testing Library): add/remove a
+  particles layer, move-up/move-down with correct disabled-state at the boundaries,
+  new/switch/duplicate/delete scene flows (including that edits to one scene don't
+  leak into another), state persisting across a component remount, and that the
+  existing export→import round-trip still works end-to-end with the new generic
+  layer model.
+- **Real bug found and fixed during verification, not before:** `src/react.ts`
+  imports the whole `styles.css` file, and CSS isn't tree-shaken the way JS is — the
+  `.builder`/`.demo-format` rules (used only by this repo's own dev tooling, never
+  exported) were being bundled into the *public* `react.css` regardless, inflating it
+  for every consumer. Caught by watching `react.css`'s size grow to 12.98 kB while
+  adding builder-only styles. Fixed by splitting into `src/styles.css` (public
+  design-system styles, imported by `src/react.ts`) and a new `src/demo.css`
+  (demo-only builder/gallery chrome, imported only by `src/main.tsx`) —
+  `dist/lib/react.css` dropped to **10.08 kB**, smaller than its size *before* this
+  slice even started, since the split removed styles that had been silently along
+  for the ride all along.
+- **Test-methodology note**: synchronously reading the DOM/exported-JSON textarea in
+  the same script tick as a `.click()` call intermittently read stale
+  pre-render state during live-browser verification (React's state update hadn't
+  flushed yet) — not a product bug. Awaiting a short `setTimeout` before reading
+  resolved it; noting this since it produced a brief false alarm during this
+  session's live verification, similar in spirit to the checkbox-`.click()` lesson
+  from an earlier session.
+- Live-verified in a real browser: add/remove/move/drag-and-drop layer reordering,
+  new/switch/duplicate/delete scenes, and `localStorage` persistence surviving an
+  actual page reload — all confirmed via direct DOM/state inspection. Confirmed no
+  horizontal overflow and correct responsive collapsing (scenes bar to a column,
+  builder layout to one column) at 320px width.
+
+Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15 files/70 tests, up from
+13/43), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
+`pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass. `dist/lib/react.css`
+is now **10.08 kB** (down from 11.56 kB before this slice, due to the CSS-split bug
+fix above) — comfortably within budget.

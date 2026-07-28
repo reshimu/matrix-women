@@ -1,0 +1,41 @@
+/* Demo-only chrome (src/main.tsx): the SceneBuilder/DemoFormats gallery and control
+   panel used by this repo's own demo app. Not part of the design system itself --
+   these components aren't exported from @matrix-ai/ui/react, so this stylesheet is
+   never imported by src/react.ts and never ships in the public react.css. */
+
+.demo-format { padding-block: 2rem; }
+.demo-format__label { margin: 0 0 .75rem; padding-inline: clamp(1.5rem, 6vw, 6rem); font: 700 .7rem/1 ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; color: #7be9d1; }
+
+.builder { padding: 2rem clamp(1.5rem, 6vw, 6rem) 4rem; color: #eff6ff; }
+.builder__layout { display: grid; grid-template-columns: minmax(14rem, 18rem) 1fr; gap: 1.5rem; align-items: start; }
+.builder__controls { display: grid; gap: 1rem; background: #0b1420; border: 1px solid #1c2c3a; border-radius: .75rem; padding: 1rem; }
+.builder__fieldset { display: grid; gap: .4rem; border: 1px solid #1c2c3a; border-radius: .5rem; padding: .6rem .75rem; }
+.builder__field { display: grid; gap: .35rem; font-size: .85rem; color: #bdcbd7; }
+.builder__field--checkbox { display: flex; flex-direction: row-reverse; align-items: center; justify-content: flex-end; gap: .5rem; }
+.builder__preview .scene { min-height: 28rem; border-radius: .75rem; }
+.builder__preview { overflow: hidden; border-radius: .75rem; }
+.builder__io { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
+.builder__textarea { font: .78rem/1.4 ui-monospace, monospace; background: #0b1420; color: #d4fef1; border: 1px solid #1c2c3a; border-radius: .5rem; padding: .6rem; resize: vertical; }
+.builder__apply { grid-column: 1 / -1; justify-self: start; border: 1px solid #7be9d199; border-radius: 999px; padding: .5rem 1rem; color: #eafffb; background: #0b413c99; cursor: pointer; }
+.builder__issues { grid-column: 1 / -1; margin: 0; color: #ff9a9a; font-size: .85rem; }
+
+.builder button { border: 1px solid #1c2c3a; border-radius: .5rem; padding: .4rem .7rem; color: #eafffb; background: #0f1c2c; cursor: pointer; font-size: .8rem; }
+.builder button:hover:not(:disabled) { background: #16283b; }
+.builder button:disabled { opacity: .4; cursor: not-allowed; }
+.builder button:focus-visible { outline: 2px solid #7be9d1; outline-offset: 2px; }
+.builder input[type="text"], .builder select { background: #0b1420; color: #eafffb; border: 1px solid #1c2c3a; border-radius: .4rem; padding: .4rem .5rem; font: inherit; }
+
+.builder__scenes { display: flex; flex-wrap: wrap; align-items: end; gap: .75rem; margin-bottom: 1.25rem; padding: .85rem 1rem; background: #0b1420; border: 1px solid #1c2c3a; border-radius: .75rem; }
+.builder__scenes .builder__field { min-width: 12rem; }
+
+.builder__layers { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.builder__layer { display: grid; gap: .5rem; border: 1px solid #1c2c3a; border-radius: .5rem; padding: .6rem; background: #081019; }
+.builder__layer-header { display: flex; align-items: center; gap: .5rem; font-size: .8rem; }
+.builder__layer-handle { cursor: grab; color: #5a7a86; }
+.builder__layer-id { color: #7a95a1; font-size: .75rem; }
+.builder__layer-actions { display: flex; gap: .3rem; margin-left: auto; }
+.builder__layer-actions button { padding: .15rem .45rem; line-height: 1.3; }
+.builder__add-layer { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .6rem; }
+
+@media (max-width: 720px) { .builder__layout, .builder__io { grid-template-columns: 1fr; } }
+@media (max-width: 480px) { .builder__scenes { flex-direction: column; align-items: stretch; } .builder__scenes .builder__field { min-width: 0; } }

@@ -1,11 +1,13 @@
 # Risk & performance audit
 
-**Date:** 2026-07-28 (initial); **updated same day, twice** — once after the
+**Date:** 2026-07-28 (initial); **updated same day, three times** — after the
 rendering components were exported publicly (`@matrix-ai/ui/react`, ADR-0004; §2.1
-and the executive summary revised to match), and again after CI plus a bundle-size
-budget were added (`.github/workflows/ci.yml`, `scripts/check-bundle-size.mjs`; R-005
-resolved). The rest of the document's findings (risk register, test coverage,
-release-gate verdict) still hold and weren't invalidated by either change.
+and the executive summary revised to match), after CI plus a bundle-size budget were
+added (`.github/workflows/ci.yml`, `scripts/check-bundle-size.mjs`; R-005 resolved),
+and after full M4 responsive builder scope landed (R-009 resolved; §2.1's `react.css`
+figure revised down to 10.08 kB after a real CSS-leak bug was found and fixed as part
+of that work). The rest of the document's findings (risk register, test coverage,
+release-gate verdict) still hold and weren't invalidated by any of these updates.
 **Scope:** Consolidates risk and performance evidence that was previously scattered
 across `PROJECT_STATE.md`, `RISKS.md`, and `ACCEPTANCE_CRITERIA.md` into one document,
 per the last open item on `ACCEPTANCE_CRITERIA.md`'s release gates. Every number below
@@ -21,7 +23,7 @@ The published package now ships **two entries**: `@matrix-ai/ui` — a **2.28 kB
 configuration/validation/selection core with zero runtime dependencies and zero DOM
 access — and `@matrix-ai/ui/react` — **20.19 kB** (6.27 kB gzip) of actual rendering
 components (`Scene`, `SceneFallback`, `SceneWebgl`, `SubjectPortrait`), plus an
-**11.56 kB** stylesheet the consumer imports explicitly. The rendering components are
+**10.08 kB** stylesheet the consumer imports explicitly. The rendering components are
 no longer demo-only — they're the same code this repo's demo uses, exported behind a
 deliberately separate subpath (ADR-0004) so consumers who only want config/validation
 never pull in React-rendering code, CSS, or WebGL/Canvas2D internals. Main runtime cost
@@ -51,7 +53,7 @@ Freshly rebuilt 2026-07-28, after the `@matrix-ai/ui/react` export landed:
 | --- | --- | --- |
 | `dist/lib/index.js` (`@matrix-ai/ui`) | 2.28 kB | 1.01 kB |
 | `dist/lib/react.js` (`@matrix-ai/ui/react`) | 20.19 kB | 6.27 kB |
-| `dist/lib/react.css` (`@matrix-ai/ui/react.css`) | 11.56 kB | 3.51 kB |
+| `dist/lib/react.css` (`@matrix-ai/ui/react.css`) | 10.08 kB | 3.14 kB |
 | `dist/lib/select-*.js` (shared chunk, both entries import it) | 0.48 kB | 0.29 kB |
 
 - A consumer who imports only `@matrix-ai/ui` (config/validation/selection) pays only
@@ -163,7 +165,7 @@ never removed; reconciled here against actual current code, not just copied).
 | R-006 | Low | The public package doesn't export the rendering components — only config/validation/selection. | **Resolved 2026-07-28** | `Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait` now exported via a separate `@matrix-ai/ui/react` entry (ADR-0004), with a matching `@matrix-ai/ui/react.css`, a `'use client'` boundary verified against a real `next build`, and a new consumer fixture (`fixtures/react-consumer.mjs`). The `.` entry is unaffected — still zero DOM/CSS dependencies. |
 | R-007 | Low | No real-browser continuous-animation/resize test automation exists. | Open, environment-constrained | Every tool available across this project's sessions has a dead-`rAF`/non-compositing limitation; worked around via static verification and manual real-browser checks (see §3). Not closeable without a different test environment (e.g., real Playwright/Puppeteer with an actual display). |
 | R-008 | Low | WebGL's visual vocabulary (procedural gradient/rain/glow) is an approximation of the CSS scene, not pixel-identical. | Accepted | Intentional scope decision from the visual-parity pass — matches position/color/behavior, not a literal recreation of CSS's falling-text columns. |
-| R-009 | Informational | Full M4 responsive-builder scope (drag/drop layer editing, multi-scene management) exceeds the round-trip minimum currently shipped (`SceneBuilder.tsx`). | Open, scoped | `SceneBuilder.tsx` satisfies the release-gate wording ("round-trips scene configuration") but is a minimal control panel, not a full visual builder product. |
+| R-009 | Informational | Full M4 responsive-builder scope (drag/drop layer editing, multi-scene management) exceeds the round-trip minimum currently shipped (`SceneBuilder.tsx`). | **Resolved 2026-07-28** | `SceneBuilder.tsx` now has multi-scene management (new/switch/duplicate/delete, `localStorage`-persisted) and generic layer add/remove/reorder (drag-and-drop + keyboard-accessible ↑/↓ buttons) via new pure helpers (`src/components/builderState.ts`, 18 unit tests) plus 9 component tests. Also found and fixed a real bug during this work: the public `react.css` was accidentally shipping demo-only builder styles (CSS isn't tree-shaken); split into `src/styles.css`/`src/demo.css`, shrinking `react.css` from 12.98 kB to 10.08 kB. |
 
 ---
 
@@ -187,13 +189,16 @@ never removed; reconciled here against actual current code, not just copied).
 | Relevant unit/lifecycle/browser/accessibility/reduced-motion/asset-failure tests pass | ✅ Pass — 13 files/43 tests (see §3 for what's covered vs. named-open) |
 | Visual output inspected at required breakpoints | ✅ Done repeatedly across sessions at 1440×900 and 320×700, both renderers, all three formats |
 | Package independently consumable in Vite and Next.js | ✅ Both proven, for both entries — Vite via the demo itself, Next.js via `fixtures/nextjs-consumer/` (`.` entry at `/`, `@matrix-ai/ui/react` at `/react` with a verified Server-Component-renders-Client-Component `'use client'` boundary) with a real `next build`/`next dev` |
-| Builder round-trips scene configuration | ✅ `SceneBuilder.tsx` + `exportSceneConfig`/`importSceneConfig`, round-trip-tested (`roundTrip.test.ts`) — minimal scope, not full M4 (R-009) |
+| Builder round-trips scene configuration | ✅ `SceneBuilder.tsx` + `exportSceneConfig`/`importSceneConfig`, round-trip-tested (`roundTrip.test.ts`), now with full multi-scene management and generic layer editing (R-009 resolved) |
 | Fallback, accessibility, performance evidence, risks, API documentation, clean-install results recorded | ✅ This document + `README.md` + a verified clean-install run (`rm -rf node_modules` + `pnpm install --frozen-lockfile` + full validation, recorded in `ROADMAP.md`) |
 | No unresolved critical or high-severity defect remains | ✅ Nothing in the risk register above is rated above Medium, and every Medium item has a named mitigation or is explicitly accepted |
 | CI enforces the full validation suite, including a bundle-size budget | ✅ `.github/workflows/ci.yml` (added 2026-07-28 — no CI existed before this) runs on every push/PR: typecheck, lint, test, build, all three consumer fixtures, then `pnpm check:bundle-size` |
 
-**This closes the last previously-open release gate** ("evidence recorded" for
-risks/performance) and both Medium-severity risks (R-005, R-006). The remaining open
-items (R-004, R-007, R-009) are Low/Informational, scoped, named, and not blocking
-for the library's current stated scope — they are inputs to *future* product
-decisions, not defects in what exists today.
+**As of 2026-07-28, every item in the risk register (R-001–R-009) is either resolved
+or an explicitly-accepted Low/Informational item** (R-004: particle DOM node count,
+accepted, not needed at current usage; R-007: no automated real-browser animation
+verification, accepted, environment-constrained; R-008: WebGL visual parity is an
+approximation by deliberate design, accepted). Nothing above Low severity remains
+open, and every release gate in `ACCEPTANCE_CRITERIA.md` is checked. Further work from
+here (visual regression tooling, an npm publish) is a product-direction choice, not a
+defect fix.
