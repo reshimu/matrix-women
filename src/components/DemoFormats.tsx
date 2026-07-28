@@ -1,4 +1,5 @@
 import { Scene } from './Scene'
+import { SceneBuilder } from './SceneBuilder'
 import { defaultScene } from '../scene'
 import type { SceneFormat } from '../scene'
 
@@ -15,6 +16,7 @@ export function DemoFormats({ reducedMotion }: DemoFormatsProps) {
           <Scene scene={{ ...defaultScene, format, reducedMotion }} />
         </div>
       ))}
+      <SceneBuilder />
     </>
   )
 }
