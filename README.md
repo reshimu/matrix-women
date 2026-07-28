@@ -128,7 +128,10 @@ pnpm build         # builds both the demo (dist/) and the library artifact (dist
 pnpm test:consumer         # proves @matrix-ai/ui is importable standalone (plain Node/ESM)
 pnpm test:react-consumer   # proves @matrix-ai/ui/react is importable standalone and SSRs via react-dom/server
 pnpm test:nextjs-consumer  # proves both entries under a real `next build` (fixtures/nextjs-consumer)
+pnpm check:bundle-size     # fails if a published artifact regresses past its size budget
 ```
+
+`.github/workflows/ci.yml` runs all of the above on every push/PR.
 
 This is a pnpm workspace: the root package (`@matrix-ai/ui`) and
 `fixtures/nextjs-consumer` (a real Next.js app depending on it via `workspace:*`) are

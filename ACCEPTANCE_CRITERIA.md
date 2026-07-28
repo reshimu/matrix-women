@@ -59,8 +59,8 @@
       stale WebGL canvas resize listener, and a duplicate-DOM-id accessibility bug
       that would have broken `aria-labelledby` the moment more than one scene was
       mounted on a page (fixed via `useId`). Open, non-blocking items are tracked in
-      `NEXT_TASK.md` (a CI performance budget, full M4 builder scope beyond this
-      round-trip minimum, visual regression tooling).
+      `NEXT_TASK.md` (full M4 builder scope beyond this round-trip minimum, visual
+      regression tooling).
 
 ## Rendering components exported publicly (2026-07-28) — resolves audit R-006
 
@@ -80,6 +80,20 @@
       `detectConstrainedDevice()` that would throw under SSR without a `navigator`
       global, and a `'use client'` directive placement gotcha (Rollup only preserves
       it at the top of the bundled entry file, not in individual source files).
+
+## CI + bundle-size performance budget (2026-07-28) — resolves audit R-005
+
+- [x] `.github/workflows/ci.yml` added — no CI existed for this repo before this. Runs
+      on every push to `main` and every PR: `typecheck` → `lint` → `test` → `build` →
+      `test:consumer` → `test:react-consumer` → `test:nextjs-consumer` →
+      `check:bundle-size`.
+- [x] `scripts/check-bundle-size.mjs` (`pnpm check:bundle-size`, no new dependency)
+      fails the build if `dist/lib/index.js`, `react.js`, `react.css`, or any shared
+      chunk regresses past a defined budget, each set with real headroom above the
+      current verified size.
+- [x] Verified the check-script can actually fail: temporarily patched a copy with an
+      impossibly low budget, confirmed `[FAIL]` output and a non-zero exit code, then
+      discarded the patched copy — not just trusted that it would work.
 
 ## WebGL/CSS visual parity (2026-07-27)
 

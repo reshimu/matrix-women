@@ -425,8 +425,26 @@ are a real, intended public API addition). Full evidence and per-slice detail in
   `pnpm test:nextjs-consumer`. New sizes: `dist/lib/index.js` 2.28 kB, `react.js`
   20.19 kB (6.27 kB gzip), `react.css` 11.56 kB.
 
+## Evidence as of 2026-07-28 (CI + bundle-size performance budget, resolves R-005)
+
+- No CI existed for this repo at all before this — added `.github/workflows/ci.yml`,
+  running on every push/PR: `typecheck` → `lint` → `test` → `build` →
+  `test:consumer` → `test:react-consumer` → `test:nextjs-consumer` →
+  `check:bundle-size` — the exact sequence every session up to now has run by hand.
+- Added `scripts/check-bundle-size.mjs` (`pnpm check:bundle-size`, no new
+  dependency): checks `dist/lib/index.js` (budget 5 kB), `react.js` (budget 30 kB),
+  `react.css` (budget 20 kB), and any shared chunk (budget 2 kB each) — all set with
+  real headroom above current verified sizes.
+- **Verified the check can actually fail**: temporarily patched a copy with an
+  impossibly low budget, confirmed `[FAIL]` output and a non-zero exit code, then
+  discarded the patched copy — a budget check nobody's seen fail is indistinguishable
+  from no check at all.
+- Validated: ran the full CI sequence locally end-to-end — all pass, 13 files/43
+  tests unchanged.
+
 ## Exact next task
 
-No forced next task. Remaining open items (see `RISK_PERFORMANCE_AUDIT.md` §5 and
-`NEXT_TASK.md`): a CI performance budget, full M4 responsive-builder scope, and
-visual regression tooling.
+No forced next task. All Medium-or-higher risks in `RISK_PERFORMANCE_AUDIT.md` are
+now resolved. Remaining open items are Low/Informational: full M4
+responsive-builder scope, visual regression tooling, and whether to publish to npm
+(see `NEXT_TASK.md`).

@@ -409,3 +409,36 @@ this is build/export wiring, not new testable pure logic), `pnpm build`,
 `pnpm test:consumer`, `pnpm test:react-consumer`, `pnpm test:nextjs-consumer` (both
 Next.js pages). New artifact sizes: `dist/lib/index.js` 2.28 kB, `dist/lib/react.js`
 20.19 kB (6.27 kB gzip), `dist/lib/react.css` 11.56 kB.
+
+## CI + bundle-size performance budget (2026-07-28) — resolves audit R-005
+
+No CI existed for this repo at all until now — every validation command up to this
+point had been run manually, every session, by whoever (Codex or Claude) was
+working. Added both a CI workflow and the performance budget in the same slice, since
+"a CI performance budget" implies CI has to exist first.
+
+- Added `.github/workflows/ci.yml`: on every push to `main` and every PR, installs
+  with `--frozen-lockfile`, then runs `typecheck` → `lint` → `test` → `build` →
+  `test:consumer` → `test:react-consumer` → `test:nextjs-consumer` →
+  `check:bundle-size`, in that order — the exact sequence this project's sessions
+  have been running by hand.
+- Added `scripts/check-bundle-size.mjs` (`pnpm check:bundle-size`, no new
+  dependency — a plain Node script, consistent with this repo's
+  minimal-dependencies preference over pulling in something like `size-limit`):
+  reads `dist/lib/`, checks `index.js` (budget 5 kB, current 2.28 kB), `react.js`
+  (budget 30 kB, current 20.19 kB), `react.css` (budget 20 kB, current 11.56 kB),
+  and any other shared chunk file (budget 2 kB each, current 0.48 kB) — each budget
+  set with real headroom above the current verified size, not tuned to just barely
+  pass.
+- **Verified the check-script can actually fail, not just always pass**: temporarily
+  patched a copy of the script with an impossibly small budget, confirmed it printed
+  `[FAIL]` for the affected file and exited non-zero, then discarded the patched
+  copy. A budget check nobody ever saw fail is indistinguishable from no check at
+  all — this is the same verification discipline as everywhere else in this project
+  (e.g. the earlier accessibility/reduced-motion tests were confirmed to actually
+  catch the behavior they claim to, not just pass trivially).
+- Resolves `RISK_PERFORMANCE_AUDIT.md`'s R-005 (the last Medium-severity open risk).
+
+Validated: ran the exact full CI sequence locally end-to-end (`typecheck` → `lint` →
+`test` → `build` → `test:consumer` → `test:react-consumer` → `test:nextjs-consumer` →
+`check:bundle-size`) — all pass, 13 files/43 tests unchanged.

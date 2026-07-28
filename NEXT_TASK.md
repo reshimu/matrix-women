@@ -1,31 +1,30 @@
 # Next atomic task
 
-The rendering components are now exported publicly: `@matrix-ai/ui/react` ships
-`Scene`, `SceneFallback`, `SceneWebgl`, `SubjectPortrait`, plus a `@matrix-ai/ui/react.css`
-stylesheet the consumer imports explicitly. A separate library entry, not added to the
-main `@matrix-ai/ui` entry (ADR-0004) — the main entry stays zero-DOM/zero-CSS. A
-`'use client'` boundary was verified against a real `next build`
-(`fixtures/nextjs-consumer/app/react/page.tsx`), and a new
-`fixtures/react-consumer.mjs` proves the built artifact works standalone under plain
-Node via `react-dom/server`. This resolves audit R-006. Full evidence in
-`PROJECT_STATE.md`/`ROADMAP.md`/`RISK_PERFORMANCE_AUDIT.md`.
+CI now exists (`.github/workflows/ci.yml` — there was none before this) and enforces
+a bundle-size performance budget (`scripts/check-bundle-size.mjs`,
+`pnpm check:bundle-size`) on every push/PR, running the exact validation sequence
+every session has been running by hand: typecheck → lint → test → build → all three
+consumer fixtures → bundle-size check. This resolves audit R-005 — the last
+Medium-severity item in `RISK_PERFORMANCE_AUDIT.md`. Full evidence in
+`PROJECT_STATE.md`/`ROADMAP.md`.
 
 ## Proposed next steps (not started, needs direction)
 
-All release gates in `ACCEPTANCE_CRITERIA.md` are checked, and the two biggest named
-product decisions (R-006, the risk audit itself) are both done. Remaining items are
-smaller and more optional:
+Every Medium-or-higher risk is now resolved and every release gate is checked.
+Remaining items are Low/Informational and purely optional:
 
-1. **CI performance budget** (audit R-005) — nothing currently fails a build on
-   bundle-size regression for either `dist/lib/index.js` or `dist/lib/react.js`.
-2. **Full M4 responsive builder** (audit R-009) — `SceneBuilder.tsx` satisfies the
+1. **Full M4 responsive builder** (audit R-009) — `SceneBuilder.tsx` satisfies the
    round-trip release gate; a real drag/drop multi-scene builder is a much larger,
    separate scope.
-3. **Visual regression tooling** (audit R-007) — would close the "no automated
-   real-browser animation verification" gap properly.
-4. **Consider publishing to npm** now that the package has a real, exported,
-   documented API surface — not started, and a bigger step (versioning, registry
-   auth, semver policy) worth discussing explicitly before doing.
+2. **Visual regression tooling** (audit R-007) — would close the "no automated
+   real-browser animation verification" gap properly, if this moves toward an
+   actual release.
+3. **Consider publishing to npm** — the package has a real, documented, CI-validated,
+   size-budgeted public API surface now. Not started; versioning/registry-auth/semver
+   policy worth discussing explicitly before doing.
+4. **Canvas-based particle rendering** (audit R-004) — only if real usage approaches
+   the 200-particle validation ceiling on low-end hardware; not needed today.
 
 **Current blocker:** none technical — these are all optional next steps, not gates.
-The system is genuinely production-ready for its current, now-broader stated scope.
+The system is production-ready, CI-enforced, and has no known unresolved defect above
+Low severity.

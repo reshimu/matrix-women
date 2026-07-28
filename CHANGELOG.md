@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-28 — CI + bundle-size performance budget
+
+- No CI existed for this repo at all until now — every validation command had been
+  run manually, every session. Added `.github/workflows/ci.yml`: on every push to
+  `main` and every PR, runs `typecheck` → `lint` → `test` → `build` →
+  `test:consumer` → `test:react-consumer` → `test:nextjs-consumer` →
+  `check:bundle-size`, in that order.
+- Added `scripts/check-bundle-size.mjs` (`pnpm check:bundle-size`) — a plain Node
+  script, no new dependency, consistent with this repo's minimal-dependencies
+  preference over something like `size-limit`. Checks `dist/lib/index.js` (budget
+  5 kB, current 2.28 kB), `react.js` (budget 30 kB, current 20.19 kB), `react.css`
+  (budget 20 kB, current 11.56 kB), and any shared chunk (budget 2 kB each) — all set
+  with real headroom above current verified sizes.
+- **Verified the check-script can actually fail, not just always pass**: temporarily
+  patched a copy with an impossibly small budget, confirmed `[FAIL]` output and a
+  non-zero exit code, then discarded the patched copy.
+- This resolves `RISK_PERFORMANCE_AUDIT.md`'s R-005 — the last Medium-severity open
+  risk. Both Medium risks (R-005, R-006) are now resolved.
+- Validated: ran the full CI sequence locally end-to-end — all pass, 13 files/43
+  tests unchanged.
+
 ## 2026-07-28 — Export rendering components publicly (`@matrix-ai/ui/react`)
 
 - Added `src/react.ts` as a **second, separate** library entry — not merged into the
