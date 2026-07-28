@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-07-27 — Next.js consumption proof
+
+- Added `pnpm-workspace.yaml` (`packages: ['.', 'fixtures/*']`) and
+  `fixtures/nextjs-consumer/` — a real Next.js 15 app, a genuine pnpm workspace
+  member depending on `@matrix-ai/ui` via `workspace:*` (confirmed resolved as a real
+  filesystem symlink, not a hand-rolled path hack).
+- `app/page.tsx` is a Server Component (no `'use client'`) importing `defaultScene`,
+  `validateScene`, `selectRenderer`, and `selectActiveLayers` directly from
+  `@matrix-ai/ui` — proving the public library entry has zero DOM/browser
+  dependencies and is genuinely safe at Next's build/server-render time.
+- `next build` succeeded and statically prerendered the page. `next dev` was
+  live-verified in a real browser: correct SSR-computed values rendered (`Scene id:
+  matrix-serenity`, `Renderer kind: webgl`, `Active layers: subject, matrix-rain,
+  ambient-light`), no console errors.
+- **Caught and fixed during wiring:** adding the fixture broke root `pnpm lint`
+  (`max-warnings=0`) via a `react-refresh/only-export-components` warning on
+  `layout.tsx`'s Next-required `metadata` export — a known false-positive (Vite's
+  react-refresh rule lacks the exception `eslint-config-next` normally provides).
+  Scoped the rule off for `fixtures/nextjs-consumer/**` only, not suppressed globally.
+- Added `pnpm test:nextjs-consumer` script (mirrors `test:consumer`'s pattern) and a
+  `.claude/launch.json` entry for previewing `next dev`.
+- Re-ran the full pre-existing validation suite after adding the workspace: `pnpm
+  typecheck`, `pnpm lint`, `pnpm test` (7 files/19 tests, unchanged), `pnpm build`,
+  `pnpm test:consumer` all still pass — confirming the workspace addition didn't
+  disturb anything pre-existing.
+- This closes a `PROJECT_SPEC.md` requirement ("must support... Vite and Next.js
+  consumption") that had been an open, explicitly flagged gap since the M0 recon pass.
+
 ## 2026-07-27 — M3 config-driven WebGL composition
 
 - Added `src/renderer/webglUniforms.ts` (`deriveWebglUniforms`, pure and tested — 4

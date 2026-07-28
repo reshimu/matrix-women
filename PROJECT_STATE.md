@@ -1,7 +1,11 @@
 # Project state
 
-**Current milestone:** M1 and M2 **complete**. M3 (progressive WebGL enhancement) —
-**in progress**: lifecycle contract done, no rendering content yet.
+**Current milestone:** M1 and M2 **complete**. M3 (progressive WebGL enhancement) is
+functionally complete end-to-end (lifecycle, wiring, animation, config-driven
+composition, real-browser spot-check) — visual parity with the CSS scene and
+constrained-device re-evaluation are the only open items, both deferred by choice.
+M4 has not formally started, but its Next.js consumption requirement (a spec gate) is
+already proven — see evidence below.
 
 ## Evidence as of 2026-07-27 (reconciliation pass)
 
@@ -232,12 +236,36 @@ flagged above. Findings:
   `browserEnvironment()` path (actual `window.document`/`IntersectionObserver`) has no
   automated test — only the injected fake environment is exercised in
   `cssRendererHost.test.ts`. Vitest runs in `environment: 'node'`.
-- No Next.js consumption proof exists yet, despite `PROJECT_SPEC.md` requiring it —
-  only a plain-Node consumer fixture (`fixtures/library-consumer.mjs`).
 - Only one scene format (`hero`) renders meaningfully; `portrait` and `square` are
   typed but produce no visually distinct output.
 
+## Evidence as of 2026-07-27 (Next.js consumption proof, same day)
+
+- **Resolved:** the "no Next.js consumption proof" gap above is closed. Added
+  `pnpm-workspace.yaml` and `fixtures/nextjs-consumer/` (a real Next.js 15 app, its own
+  workspace member depending on `@matrix-ai/ui` via `workspace:*`, confirmed resolved
+  as a real symlink into the repo root, not a hand-rolled path hack).
+- `fixtures/nextjs-consumer/app/page.tsx` is a Server Component (no `'use client'`)
+  importing `defaultScene`/`validateScene`/`selectRenderer`/`selectActiveLayers` —
+  proving the public entry is genuinely SSR/build-safe with zero DOM dependencies.
+- `next build` succeeded and **statically prerendered** the page — the package
+  executed correctly inside Next's real server-rendering pipeline, not a simulation.
+  `next dev` live-verified in a real browser: correct values rendered (`Scene id:
+  matrix-serenity`, `Renderer kind: webgl`, `Active layers: subject, matrix-rain,
+  ambient-light`), no console errors.
+- **Caught during wiring, not before:** adding the fixture broke root `pnpm lint`
+  (`max-warnings=0`) via a `react-refresh/only-export-components` warning on
+  `layout.tsx`'s required `metadata` export — a known false-positive (Vite's
+  react-refresh rule doesn't have Next's App Router exception for this). Scoped the
+  rule off for `fixtures/nextjs-consumer/**` rather than suppressing it globally.
+- Added `pnpm test:nextjs-consumer` script and a `.claude/launch.json` entry for
+  previewing `next dev`.
+- Re-ran the full pre-existing validation suite after adding the workspace: `pnpm
+  typecheck`, `pnpm lint`, `pnpm test` (7 files/19 tests, unchanged), `pnpm build`,
+  `pnpm test:consumer` all still pass — nothing pre-existing broke.
+
 ## Exact next task
 
-The WebGL lifecycle scaffold, its wiring, and a trivial animated gradient are all
-done. See `NEXT_TASK.md` for proposed next steps — not started; awaiting direction.
+M3's WebGL path and the Next.js consumption proof are both done. No forced next
+task — see `NEXT_TASK.md` for candidate directions (M3 visual parity, additional
+scene formats demoed live, or starting M4's builder work).

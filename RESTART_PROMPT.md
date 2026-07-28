@@ -9,8 +9,12 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
 ## Current verified state
 
 - Explicit greenfield authorization; no prototype was provided.
-- M0, M1, and M2 are complete. M3 (progressive WebGL enhancement) is **in
-  progress**: lifecycle contract done, no rendering content yet.
+- M0, M1, and M2 are complete. M3 (progressive WebGL enhancement) is functionally
+  complete end-to-end (lifecycle, wiring, animation, config-driven composition,
+  real-browser spot-check) — only visual parity with the CSS scene and further
+  constrained-device work remain, both deferred by choice. The Next.js consumption
+  proof required by `PROJECT_SPEC.md` (a spec gate, not tied to any one milestone) is
+  also done.
 - Demo: Vite 8 + React 19 + TypeScript 5.9 + Tailwind 4. `src/main.tsx` renders the responsive CSS fallback in `src/components/SceneFallback.tsx`.
 - Library: `src/index.ts` exports browser-free scene defaults/types/validation, renderer selection, and `selectActiveLayers`. `vite.library.config.ts` emits `dist/lib/index.js`; `tsconfig.lib.json` emits declarations.
 - Consumer proof: `fixtures/library-consumer.mjs` imports `@matrix-ai/ui` after `pnpm build:library`.
@@ -62,19 +66,27 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   actually zeroes the glow pixel (tested by temporarily editing `main.tsx`, then
   reverting before commit). Caught a real `react-hooks/refs` lint error along the way
   (mutating a ref during render) and fixed it via `useMemo` + effect.
-- Last full validation passed 2026-07-27: typecheck, lint, **6 Vitest files / 15
-  tests**, consumer fixture, demo build, and library build. Library artifact size
-  unchanged (2.26 kB), confirming none of the new browser-only code leaks into the
-  public entry.
+- **(2026-07-27, Next.js consumption proof)** Added `pnpm-workspace.yaml` and
+  `fixtures/nextjs-consumer/` — a real Next.js 15 app, its own pnpm workspace member,
+  depending on `@matrix-ai/ui` via `workspace:*` (confirmed resolved as a real
+  symlink). `app/page.tsx` is a Server Component (no `'use client'`) importing
+  `defaultScene`/`validateScene`/`selectRenderer`/`selectActiveLayers` directly.
+  `next build` statically prerendered the page; `next dev` live-verified in a real
+  browser with correct SSR-computed output and no console errors. Caught and fixed a
+  real lint break (`react-refresh/only-export-components` false-positive on Next's
+  required `metadata` export) by scoping the rule off for the fixture directory only.
+  Added `pnpm test:nextjs-consumer` and a `.claude/launch.json` entry for `next dev`.
+- Last full validation passed 2026-07-27: typecheck, lint, **7 Vitest files / 19
+  tests**, both consumer fixtures (`test:consumer` and `test:nextjs-consumer`), demo
+  build, and library build. Library artifact size unchanged (2.26 kB).
 
 ## Exact next task
 
-M2 is done. M3's WebGL path is complete end-to-end: lifecycle → wiring → animated
-shader → real-browser spot-check → config-driven composition. No single obvious next
-task — see `NEXT_TASK.md` for candidate directions (visual parity with the CSS scene,
-or moving on to other roadmap gaps like Next.js consumption proof or M4 builder work).
-Update all project records and this restart pack with factual validation evidence when
-done.
+M3's WebGL path and the Next.js consumption proof are both done. No forced next
+task — see `NEXT_TASK.md` for candidate directions (M3 visual parity, demoing
+portrait/square formats live, starting M4's builder work, or accessibility/keyboard
+test coverage). Update all project records and this restart pack with factual
+validation evidence when done.
 
 ## Non-negotiables
 
@@ -97,9 +109,9 @@ done.
   matrix-rain/portrait-silhouette CSS look.
 - The `Scene` branch decision (webgl vs. css) has no automated test — verified only by
   manual live-browser checks (repeatable, but not run in CI).
-- Builder round-trip, Next.js fixture, real-DOM/browser regression tests (current
-  tests only exercise an injected fake environment for both the CSS and WebGL hosts),
-  and full release validation remain outstanding.
+- Builder round-trip (M4) and real-DOM/browser regression tests (current tests only
+  exercise an injected fake environment for both the CSS and WebGL hosts) remain
+  outstanding. Next.js consumption is no longer a gap — see evidence above.
 - Only one format (`hero`) is actually mounted in the demo app (`main.tsx`); `portrait`
   and `square` are proven correct via computed-style inspection but not demoed live.
   Low priority — real M4 builder work will exercise this properly.

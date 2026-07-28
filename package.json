@@ -14,6 +14,7 @@
     "build:demo": "tsc -b && vite build",
     "build:library": "tsc -p tsconfig.lib.json && vite build --config vite.library.config.ts",
     "test:consumer": "pnpm build:library && node fixtures/library-consumer.mjs",
+    "test:nextjs-consumer": "pnpm build:library && pnpm --filter matrix-ai-ui-nextjs-consumer build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "lint": "eslint . --max-warnings=0"

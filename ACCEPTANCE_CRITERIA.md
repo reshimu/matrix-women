@@ -13,7 +13,9 @@
 - [ ] Typecheck and lint pass.
 - [ ] Relevant unit, schema/migration, lifecycle, browser, visual, responsive, reduced-motion, keyboard, asset-failure, fallback, context-loss, and stability tests pass.
 - [ ] Visual output is inspected at required breakpoints.
-- [ ] Builder round-trips scene configuration and package is independently consumable in Vite and Next.js.
+- [x] Package is independently consumable in Vite (the demo app itself) and in
+      Next.js (a real `next build`/`next dev` fixture — see M3.5 section below).
+- [ ] Builder round-trips scene configuration (M4 — not started).
 - [ ] Fallback, accessibility, performance evidence, risks, API documentation, and clean-install results are recorded.
 - [ ] No unresolved critical or high-severity defect remains.
 
@@ -61,3 +63,19 @@
       not a literal recreation of the CSS visuals.
 - [ ] Constrained-device behavior beyond what `selectRenderer` already does (steering
       constrained devices to `css`) — not re-evaluated in this slice.
+
+## Next.js consumption proof (2026-07-27)
+
+- [x] A real Next.js app (`fixtures/nextjs-consumer/`, its own pnpm workspace member,
+      linked via `workspace:*`) imports `@matrix-ai/ui` — `defaultScene`,
+      `validateScene`, `selectRenderer`, `selectActiveLayers` — from a Server
+      Component with no `'use client'` directive, proving the public entry is
+      genuinely SSR/build-time-safe with zero DOM/browser API usage.
+- [x] `next build` succeeds and statically prerenders the page (`○ (Static)`),
+      meaning the package's exports executed correctly inside Next's actual
+      server-rendering pipeline, not just a Node script emulating one.
+- [x] `next dev` live-verified in a real browser: page renders the correct
+      SSR-computed values (`Scene id: matrix-serenity`, `Renderer kind: webgl`,
+      `Active layers: subject, matrix-rain, ambient-light`), no console errors.
+- [x] Root `pnpm lint`/`pnpm typecheck`/`pnpm test`/`pnpm build` all still pass
+      unaffected after adding the workspace member.

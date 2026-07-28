@@ -6,7 +6,7 @@
 | M1 | Establish package boundaries, renderer-independent scene schema, and Vite builder baseline | Complete — separate library artifact and consumer fixture validated |
 | M2 | Implement core scene composition and dependable non-WebGL fallback | Complete — CSS fallback lifecycle host and config-driven scene composition (layers + effects + format) implemented and tested; validated 2026-07-27. |
 | M3 | Add progressive WebGL enhancement, lifecycle management, and constrained-device behavior | In progress — renderer lifecycle contract, end-to-end wiring, an animated shader now driven by `scene.layers`/`scene.effects` (mirroring `selectActiveLayers`), and a real-Chrome spot-check are all done. No visual parity with the CSS scene attempted; constrained-device behavior not re-evaluated beyond `selectRenderer`. |
-| M4 | Build responsive builder, configuration round-trip, and documented public API | Pending |
+| M4 | Build responsive builder, configuration round-trip, and documented public API | Pending — Next.js consumption proof (a spec requirement, previously an open gap) completed 2026-07-27 ahead of the rest of M4; see entry below. |
 | M5 | Complete automated/browser/visual/accessibility/performance validation and release audit | Pending |
 
 No downstream milestone starts until M0 has a recorded runnable baseline or an explicit decision authorizes a greenfield start.
@@ -145,3 +145,35 @@ Full validation (`typecheck`/`lint`/`test`: 7 files/19 tests, up from 6/15/`buil
 `test:consumer`) passed. Library artifact size unchanged (2.26 kB) —
 `webglUniforms.ts` is imported only by the demo-only `SceneWebgl`, not re-exported from
 `src/index.ts`.
+
+## Next.js consumption proof (2026-07-27) — M3 set aside, this closes a spec gap
+
+`PROJECT_SPEC.md` requires the package work in "Vite and Next.js consumption"; only a
+plain-Node fixture existed. Set up a real second proof:
+
+- Added `pnpm-workspace.yaml` (`packages: ['.', 'fixtures/*']`) so
+  `fixtures/nextjs-consumer` can depend on `@matrix-ai/ui` via `workspace:*`, resolved
+  by pnpm as a real symlink (confirmed: `fixtures/nextjs-consumer/node_modules/@matrix-ai/ui
+  -> /c/dev/matrix-women`) — not a hand-rolled path hack.
+- `fixtures/nextjs-consumer/app/page.tsx` is a **Server Component** (no `'use client'`)
+  importing `defaultScene`, `validateScene`, `selectRenderer`, `selectActiveLayers`
+  from `@matrix-ai/ui` — proving the public entry has zero DOM/browser dependencies
+  and works at Next's build/server-render time, not just in a browser.
+- `next build` succeeded and **statically prerendered** the page (`○ (Static)`) — the
+  package's exports ran correctly inside Next's real server-rendering pipeline.
+  `next dev` live-verified in a real browser: correct SSR-computed values rendered
+  (`Scene id: matrix-serenity`, `Renderer kind: webgl`, `Active layers: subject,
+  matrix-rain, ambient-light`), no console errors.
+- **Caught and fixed a real lint issue while wiring this up:** adding the fixture made
+  root `pnpm lint` fail (`max-warnings=0`) on a `react-refresh/only-export-components`
+  warning for `layout.tsx`'s required `metadata` export — a well-known false-positive
+  where Vite's react-refresh rule doesn't recognize Next.js App Router's
+  `metadata`-export convention (which `eslint-config-next` normally exempts). Scoped
+  the rule off for `fixtures/nextjs-consumer/**` rather than suppressing it globally.
+- Added `pnpm test:nextjs-consumer` (mirrors `test:consumer`'s pattern: rebuilds the
+  library, then runs `next build` against it) and a `.claude/launch.json` entry for
+  `next dev` preview.
+- Re-ran the full existing validation suite after adding the workspace member: `pnpm
+  typecheck`, `pnpm lint`, `pnpm test` (7 files/19 tests, unchanged), `pnpm build`, and
+  `pnpm test:consumer` all still pass — the workspace addition didn't disturb anything
+  pre-existing.
