@@ -499,3 +499,45 @@ Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15 files/70 tests, up fro
 `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass. `dist/lib/react.css`
 is now **10.08 kB** (down from 11.56 kB before this slice, due to the CSS-split bug
 fix above) — comfortably within budget.
+
+## npm publish attempt: two real packaging bugs found and fixed; publish itself blocked (2026-07-28)
+
+Shimon asked to publish to npm. Checked readiness before attempting anything, and
+found two genuine packaging bugs — not proceeding with a publish attempt would have
+been the wrong call, but publishing *as-is* would have shipped something broken:
+
+1. **`react`, `react-dom`, `vite`, `@vitejs/plugin-react`, and `tailwindcss` were all
+   listed under `"dependencies"`**, not `"devDependencies"`. Since `react`/`react-dom`
+   were *also* correctly declared as `peerDependencies`, this meant any consumer
+   installing the package would get a second copy of React installed alongside their
+   own — the classic "duplicate React instance" bug (`Invalid hook call` errors) — plus
+   Vite and Tailwind forced in as unnecessary runtime installs for a package with zero
+   actual runtime dependencies. Fixed: moved all five into `devDependencies` (needed
+   for this repo's own build/dev, not by consumers of the published package).
+2. **`"files": ["dist"]` included the entire build output directory**, but `pnpm build`
+   writes both the library (`dist/lib/`) *and* this repo's own demo app
+   (`dist/assets/*.js`, `dist/index.html`) into the same `dist/` folder. Verified via
+   `npm pack --dry-run`: the tarball was **82.8 kB packed / 281.8 kB unpacked**,
+   including the full 216 kB demo bundle that has nothing to do with the published
+   package. Fixed: `"files": ["dist/lib"]`. Re-checked with `npm pack --dry-run`:
+   **16.6 kB packed / 52.0 kB unpacked**, 25 files, exactly `dist/lib/**` + `README.md`
+   + `package.json` — nothing else.
+3. Full validation re-run after both fixes: `pnpm typecheck`, `pnpm lint`, `pnpm test`
+   (15 files/70 tests, unchanged), `pnpm build`, `pnpm test:consumer`,
+   `pnpm test:react-consumer`, `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` —
+   all pass.
+
+**The actual `npm publish` was not attempted and could not have succeeded regardless:**
+
+- `npm whoami` confirmed this machine has no npm auth configured at all
+  (`ENEEDAUTH`). Logging in requires entering Shimon's npm credentials/OTP, which is
+  a prohibited action for an agent to perform on a user's behalf regardless of
+  explicit request — this needs Shimon to run `npm login` himself.
+- `package.json` still has `"private": true`, which `npm publish` refuses outright
+  regardless of auth. Left as-is rather than flipped, since which npm scope/account
+  to publish under is a genuine open decision (see `NEXT_TASK.md`) — flipping the
+  switch that makes a publish *possible* before that's resolved would be presumptuous.
+- Confirmed via `npm view @matrix-ai/ui` (a read-only registry query, no auth needed)
+  that the exact package name is unclaimed (404) — but whether Shimon can publish
+  *under the `@matrix-ai` scope specifically* depends on whether he owns that npm
+  org/username, which isn't something this session can determine or decide.

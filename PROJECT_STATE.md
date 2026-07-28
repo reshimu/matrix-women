@@ -470,9 +470,32 @@ are a real, intended public API addition). Full evidence and per-slice detail in
   13/43), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
   `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass.
 
+## Evidence as of 2026-07-28 (npm publish attempt: two real packaging bugs found, publish itself blocked)
+
+- Checked publish-readiness before attempting anything. Found two genuine bugs:
+  `react`/`react-dom`/`vite`/`@vitejs/plugin-react`/`tailwindcss` were listed under
+  `"dependencies"` (with `react`/`react-dom` *also* in `peerDependencies`), which
+  would've forced a duplicate React instance into every consumer's install plus
+  unnecessary Vite/Tailwind installs. Moved all five to `devDependencies`.
+- `"files": ["dist"]` shipped the entire `dist/` directory, which `pnpm build`
+  populates with both the library (`dist/lib/`) *and* this repo's own demo app
+  (`dist/assets/*`, 216 kB). Verified with `npm pack --dry-run`: 82.8 kB packed /
+  281.8 kB unpacked before the fix → 16.6 kB / 52.0 kB after narrowing to
+  `"files": ["dist/lib"]` — exactly `dist/lib/**` + `README.md` + `package.json`.
+- Re-ran full validation: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15 files/70
+  tests, unchanged), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
+  `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass.
+- **The actual `npm publish` was not attempted.** `npm whoami` confirmed no npm auth
+  exists on this machine (`ENEEDAUTH`) — logging in requires Shimon's own
+  credentials/OTP, not something to do on his behalf. `package.json` still has
+  `"private": true`, deliberately left as-is: flipping it before Shimon confirms
+  which npm scope/account to publish under would be presumptuous. Confirmed via a
+  read-only `npm view @matrix-ai/ui` that the exact name is unclaimed, but scope
+  *ownership* is a separate, genuinely-his-call question.
+
 ## Exact next task
 
-No forced next task. Every risk in `RISK_PERFORMANCE_AUDIT.md`'s register is now
-either resolved or an explicitly-accepted Low/Informational item. Remaining open
-items are optional: visual regression tooling, and whether to publish to npm (see
-`NEXT_TASK.md`).
+The package is publish-ready. Blocked on two things only Shimon can resolve: running
+`npm login` himself, and deciding which npm scope/account to publish under (see
+`NEXT_TASK.md` for the options and exact commands once resolved). Not a "more work
+needed" blocker — everything closeable in this session is closed.

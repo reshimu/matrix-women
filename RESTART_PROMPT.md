@@ -155,13 +155,23 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   drag-and-drop, full scene lifecycle, and persistence across an actual reload;
   confirmed no horizontal overflow at 320px. This resolves audit R-009.
 
+- **(2026-07-28, npm publish attempt)** Found and fixed two real packaging bugs
+  while preparing to publish: `react`/`react-dom`/`vite`/`@vitejs/plugin-react`/
+  `tailwindcss` were in `"dependencies"` (would've duplicated React for every
+  consumer) — moved to `devDependencies`; and `"files": ["dist"]` shipped this
+  repo's entire 216 kB demo app inside the tarball — narrowed to `["dist/lib"]`
+  (verified via `npm pack --dry-run`: 82.8 kB → 16.6 kB packed). **Did not attempt
+  the actual publish** — this machine has no npm auth (`ENEEDAUTH`), and which npm
+  scope/account to publish under is a decision only Shimon can make (see
+  `NEXT_TASK.md` for the two things blocking it and exact commands to run once
+  resolved).
+
 ## Exact next task
 
-Every item in `RISK_PERFORMANCE_AUDIT.md`'s risk register (R-001–R-009) is now either
-resolved or an explicitly-accepted Low/Informational item. No forced next task — see
-`NEXT_TASK.md` for optional next steps (visual regression tooling, or considering an
-npm publish). Update all project records and this restart pack with factual
-validation evidence when done.
+The package is genuinely publish-ready. Blocked on two things only Shimon can
+resolve (npm login, and which scope/account to publish under) — see `NEXT_TASK.md`
+for details and exact commands. Not a "more work needed" blocker. Update all
+project records and this restart pack with factual validation evidence when done.
 
 ## Non-negotiables
 
