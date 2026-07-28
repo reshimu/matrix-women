@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useRef } from 'react'
 import type { SceneConfig } from '../scene'
 import { createWebglRendererHost } from '../renderer/browser/webglRendererHost'
+import { createPortraitTexture } from '../renderer/browser/portraitTexture'
 import { deriveWebglUniforms } from '../renderer/webglUniforms'
 import type { WebglSceneUniforms } from '../renderer/webglUniforms'
+import { computePortraitBox } from '../renderer/portraitLayout'
 
 type SceneWebglProps = { scene: SceneConfig }
 
@@ -21,6 +23,9 @@ uniform float uGlowIntensity;
 uniform float uRainDensity;
 uniform float uPortraitOpacity;
 uniform float uSparkle;
+uniform sampler2D uPortraitTexture;
+uniform vec4 uPortraitBox;
+uniform float uHasPortraitTexture;
 
 void main() {
   vec2 uv = gl_FragCoord.xy / uResolution;
@@ -34,11 +39,18 @@ void main() {
   float glow = uGlowIntensity * smoothstep(0.5, 0.0, distance(uv, glowCenter));
   color += glow * vec3(0.55, 0.98, 0.83);
 
-  color *= mix(0.85, 1.0, uPortraitOpacity);
-
   float noise = fract(sin(dot(uv * 40.0, vec2(12.9898, 78.233))) * 43758.5453);
   float sparkle = step(0.995 - uSparkle * 0.03, noise) * uSparkle;
   color += sparkle;
+
+  if (uHasPortraitTexture > 0.5) {
+    vec2 boxLocal = (gl_FragCoord.xy - uPortraitBox.xy) / uPortraitBox.zw;
+    if (boxLocal.x >= 0.0 && boxLocal.x <= 1.0 && boxLocal.y >= 0.0 && boxLocal.y <= 1.0) {
+      vec2 texCoord = vec2(boxLocal.x, 1.0 - boxLocal.y);
+      vec4 portraitColor = texture2D(uPortraitTexture, texCoord);
+      color = mix(color, portraitColor.rgb, portraitColor.a * uPortraitOpacity);
+    }
+  }
 
   gl_FragColor = vec4(color, 1.0);
 }
@@ -89,6 +101,7 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
     const gl = canvas.getContext('webgl')
     const program = gl ? createGradientProgram(gl) : null
     const positionBuffer = gl ? gl.createBuffer() : null
+    const portraitTexture = gl ? createPortraitTexture(gl) : null
 
     let aPositionLocation = -1
     let uResolutionLocation: WebGLUniformLocation | null = null
@@ -97,6 +110,9 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
     let uRainDensityLocation: WebGLUniformLocation | null = null
     let uPortraitOpacityLocation: WebGLUniformLocation | null = null
     let uSparkleLocation: WebGLUniformLocation | null = null
+    let uPortraitTextureLocation: WebGLUniformLocation | null = null
+    let uPortraitBoxLocation: WebGLUniformLocation | null = null
+    let uHasPortraitTextureLocation: WebGLUniformLocation | null = null
 
     if (gl && program && positionBuffer) {
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
@@ -108,9 +124,13 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
       uRainDensityLocation = gl.getUniformLocation(program, 'uRainDensity')
       uPortraitOpacityLocation = gl.getUniformLocation(program, 'uPortraitOpacity')
       uSparkleLocation = gl.getUniformLocation(program, 'uSparkle')
+      uPortraitTextureLocation = gl.getUniformLocation(program, 'uPortraitTexture')
+      uPortraitBoxLocation = gl.getUniformLocation(program, 'uPortraitBox')
+      uHasPortraitTextureLocation = gl.getUniformLocation(program, 'uHasPortraitTexture')
     }
 
     let lastElapsedSeconds = 0
+    let portraitBoxBottomOrigin = [0, 0, 0, 0]
 
     const paint = (elapsedSeconds: number) => {
       lastElapsedSeconds = elapsedSeconds
@@ -126,6 +146,13 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
       gl.uniform1f(uRainDensityLocation, uniforms.rainDensity)
       gl.uniform1f(uPortraitOpacityLocation, uniforms.portraitOpacity)
       gl.uniform1f(uSparkleLocation, uniforms.sparkle)
+      gl.uniform4f(uPortraitBoxLocation, ...(portraitBoxBottomOrigin as [number, number, number, number]))
+      gl.uniform1f(uHasPortraitTextureLocation, portraitTexture ? 1 : 0)
+      if (portraitTexture) {
+        gl.activeTexture(gl.TEXTURE0)
+        gl.bindTexture(gl.TEXTURE_2D, portraitTexture)
+        gl.uniform1i(uPortraitTextureLocation, 0)
+      }
       gl.drawArrays(gl.TRIANGLES, 0, 3)
     }
 
@@ -134,6 +161,8 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
       canvas.width = Math.round(canvas.clientWidth * dpr)
       canvas.height = Math.round(canvas.clientHeight * dpr)
       gl?.viewport(0, 0, canvas.width, canvas.height)
+      const box = computePortraitBox(scene.format, canvas.width, canvas.height)
+      portraitBoxBottomOrigin = [box.x, canvas.height - box.y - box.height, box.width, box.height]
       paint(lastElapsedSeconds)
     }
 
@@ -179,9 +208,10 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
       stopAnimating()
       resizeObserver.disconnect()
       paintNowRef.current = null
+      if (gl && portraitTexture) gl.deleteTexture(portraitTexture)
       host.dispose()
     }
-  }, [scene.reducedMotion])
+  }, [scene.reducedMotion, scene.format])
 
   return (
     <section className={`scene scene--${scene.format}`} aria-labelledby="scene-title">
