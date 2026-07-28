@@ -54,9 +54,20 @@
       stale WebGL canvas resize listener, and a duplicate-DOM-id accessibility bug
       that would have broken `aria-labelledby` the moment more than one scene was
       mounted on a page (fixed via `useId`). Open, non-blocking items are tracked in
-      `NEXT_TASK.md` (visual parity between CSS/WebGL scenes, whether to export the
-      rendering components publicly, full M4 builder scope beyond this round-trip
-      minimum).
+      `NEXT_TASK.md` (whether to export the rendering components publicly, full M4
+      builder scope beyond this round-trip minimum).
+
+## WebGL/CSS visual parity (2026-07-27)
+
+- [x] WebGL scene's background gradient, aura/glow position, and code-rain effect now
+      match the CSS scene's actual design (position, color stops) instead of an
+      unrelated abstract vocabulary — verified via `gl.readPixels` scans in a real
+      browser, including confirming the `effects.codeRain` toggle genuinely hides the
+      rain effect (not just slows an unrelated animation).
+- [x] Fixed a real robustness gap found during verification: config changes now
+      repaint the WebGL canvas immediately regardless of animation/reduced-motion
+      state, rather than only on the next animation frame (which may not come soon,
+      or at all, for a paused/backgrounded tab).
 
 ## M1 — package and schema foundation
 

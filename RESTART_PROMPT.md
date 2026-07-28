@@ -99,14 +99,23 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
 - Last full validation passed 2026-07-27 from a **clean install**: typecheck, lint,
   **12 Vitest files / 40 tests** (up from 7/19), both consumer fixtures, demo build,
   and library build (2.69 kB, up from 2.26 kB — a real public API addition).
+- **PR #1 merged to `main`.** Follow-up: rewrote `SceneWebgl`'s fragment shader for
+  visual parity with the CSS scene — background gradient position/colors, aura/glow
+  position (fixed a silent bug: was using the wrong bottom-origin y value), and a
+  real procedural matrix-rain effect replacing the old abstract diagonal-wave hack.
+  Found and fixed a real robustness bug along the way: config changes now repaint
+  immediately regardless of animation state (previously only took effect on the next
+  animation frame, invisible-fast in a real browser but never arriving at all in
+  this session's environment). Live-verified via `gl.readPixels` scans: rain
+  glyph-flicker present/absent correctly on the `effects.codeRain` toggle, exactly
+  reversible.
 
 ## Exact next task
 
-PR #1 (`webgl-portrait-texture`) is ready for review/merge — not merged automatically.
-After that, no forced next task — see `NEXT_TASK.md` for candidate directions (WebGL
-visual parity, deciding whether to export the rendering components publicly, full M4
-responsive-builder scope, or a consolidated risk/performance audit). Update all
-project records and this restart pack with factual validation evidence when done.
+No forced next task — see `NEXT_TASK.md` for candidate directions (deciding whether
+to export the rendering components publicly, full M4 responsive-builder scope, or a
+consolidated risk/performance audit). Update all project records and this restart
+pack with factual validation evidence when done.
 
 ## Non-negotiables
 
@@ -119,11 +128,12 @@ project records and this restart pack with factual validation evidence when done
 
 ## Known risks
 
-- **PR #1 (`webgl-portrait-texture`) is not yet merged.** All work described above
-  lives on that branch, validated from a clean install, but `main` doesn't have it
-  until the PR is reviewed and merged.
-- Visual parity between the CSS and WebGL scenes is still not attempted (WebGL uses
-  an abstract gradient/glow/sparkle vocabulary plus the portrait texture).
+- Visual parity between the CSS and WebGL scenes is now attempted but not literal —
+  the rain effect is a hashed flickering-glyph approximation, not a recreation of the
+  CSS scene's actual falling-text columns. Reasonable, not pixel-identical.
+- A checkbox's `checked` property + dispatched `'change'` event does not reliably
+  trigger React's `onChange` — use a real `.click()` when testing checkboxes.
+  Two false-alarm "bugs" this session were this exact test-harness mistake.
 - The rendering components (`Scene`/`SceneFallback`/`SceneWebgl`) are demo-only —
   not exported from `@matrix-ai/ui`. Documented explicitly in `README.md` rather than
   left implicit.

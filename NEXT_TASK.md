@@ -1,33 +1,27 @@
 # Next atomic task
 
-The `webgl-portrait-texture` branch (PR #1) closed five slices: WebGL portrait
-rendering, real-DOM lifecycle test coverage, accessibility/keyboard tests, live
-portrait/square format demos (plus a real duplicate-id bug fix), and a minimal
-config-round-trip builder — followed by a final hardening pass (asset-failure test,
-`README.md`, clean-install verification, release-gate reconciliation). Full evidence
-in `PROJECT_STATE.md`/`ROADMAP.md`. Test suite: 12 files / 40 tests.
+PR #1 (`webgl-portrait-texture`) merged to `main`. A follow-up WebGL visual parity
+pass then landed: the WebGL scene's background gradient, aura/glow position, and
+code-rain effect now match the CSS scene's actual design instead of an unrelated
+abstract vocabulary, live-verified via pixel scans. A real robustness bug was found
+and fixed along the way — config changes now repaint immediately regardless of
+animation state, not just on the next (possibly-never-arriving) animation frame.
+Full evidence in `PROJECT_STATE.md`/`ROADMAP.md`.
 
-## Immediate next step
+## Proposed next steps (not started, needs direction)
 
-**Review and merge PR #1** (https://github.com/reshimu/matrix-women/pull/1) — not
-done automatically; merging main-branch history is a decision for you, not something
-to do unilaterally.
-
-## Proposed next steps after merge (not started, needs direction)
-
-1. **Visual parity pass.** Bring the WebGL scene's look closer to the CSS scene
-   (matrix-rain-like motion, portrait/lighting cues) instead of the current abstract
-   gradient/glow/sparkle plus portrait texture.
-2. **Decide on public component exports.** Right now `@matrix-ai/ui` ships only
-   config/validation/selection primitives — the actual rendering components are
-   demo-only. Decide whether/how to export `Scene`/`SceneFallback`/`SceneWebgl`
-   publicly (this affects bundling of CSS, the WebGL shader/texture code, and API
-   surface design — worth a deliberate decision, not a quick add).
-3. **Full M4 responsive builder scope.** The round-trip minimum is done; a real
-   drag/drop, multi-scene-management builder is a substantially larger effort.
-4. **Consolidated risk/performance audit.** Evidence exists piecemeal across
+1. **Decide on public component exports.** `@matrix-ai/ui` still ships only
+   config/validation/selection primitives — the rendering components are demo-only.
+   Decide whether/how to export `Scene`/`SceneFallback`/`SceneWebgl` publicly (affects
+   bundling of CSS, the WebGL shader/texture code, and API surface design).
+2. **Full M4 responsive builder scope.** The round-trip minimum (`SceneBuilder.tsx`)
+   is done; a real drag/drop, multi-scene-management builder is substantially larger.
+3. **Consolidated risk/performance audit.** Evidence exists piecemeal across
    `PROJECT_STATE.md`/`RISKS.md`; synthesizing it into one document would close the
    last open release gate.
+4. **Further WebGL polish**, if desired — the rain effect is a reasonable
+   approximation (hashed flickering glyph cells) rather than a literal recreation of
+   the CSS scene's falling-text columns; could go further if warranted.
 
-**Current blocker:** none technical — the branch is validated and ready; next step
-is either merging it or picking a direction from the above.
+**Current blocker:** none technical — this is a direction choice, not a technical
+gate.
