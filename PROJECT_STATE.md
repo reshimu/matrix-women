@@ -264,8 +264,40 @@ flagged above. Findings:
   typecheck`, `pnpm lint`, `pnpm test` (7 files/19 tests, unchanged), `pnpm build`,
   `pnpm test:consumer` all still pass — nothing pre-existing broke.
 
+## Evidence as of 2026-07-27 (digital-woman subject illustration, same day)
+
+- Added `src/components/SubjectPortrait.tsx`: a real hand-authored SVG illustration
+  replacing the placeholder CSS blob shapes (`.subject__halo/head/neck/shoulders`
+  divs). Symmetric front-facing faceless silhouette (head/neck/shoulders as one
+  mirrored half-path via `transform="translate(400,0) scale(-1,1)"`, guaranteeing
+  perfect symmetry rather than hand-duplicated coordinates), soft halo behind the
+  head, a darker flowing hair shape, strand-highlight lines confined within the hair,
+  and a subtle center-face light highlight. Faceless/symbolic by deliberate design —
+  matches `AGENTS.md`'s "serene, intelligent, dignified, feminine, ethereal, symbolic,
+  non-sexualized" requirement while avoiding uncanny-valley risk. Fully inline SVG, no
+  external image service, matching `PROJECT_SPEC.md`'s asset constraint.
+- **This session's screenshot tooling was fundamentally broken** — worked around it by
+  rasterizing the SVG to PNG directly (`npx resvg-cli`) and reading the image, since
+  neither this session's sandboxed browser pane (doesn't composite frames) nor Claude
+  in Chrome (its automated tab has a genuine `0×0` viewport, confirmed via a failed
+  `resize_window` call) could produce a screenshot. Iterated 4 versions this way: v1
+  read as a snowman (no neck, hair looked like a cloak); v2 fixed proportions with a
+  clean mirrored half-path; v3 added strand highlights that crossed the torso and
+  looked like scratches (anatomically backwards); v4 confined the strands to the hair
+  silhouette, which read correctly. Full iteration history in `ROADMAP.md`.
+- Confirmed the shipped component matches: extracted the live DOM's actual
+  `.scene__subject svg` output from the running dev server (temporarily forcing the
+  CSS-fallback branch via the same override-then-revert pattern used earlier this
+  session) and confirmed it's byte-identical to the verified rasterized preview.
+- Full validation passed: `pnpm typecheck`, `pnpm lint`, `pnpm test` (7 files/19
+  tests, unchanged — this is a visual asset, not new testable logic), `pnpm build`,
+  `pnpm test:consumer`. No console errors at 1440×900 or 320×700 in a live dev server.
+- Sent the final rasterized image directly to Shimon so he could see it without
+  needing his own dev environment running.
+
 ## Exact next task
 
-M3's WebGL path and the Next.js consumption proof are both done. No forced next
-task — see `NEXT_TASK.md` for candidate directions (M3 visual parity, additional
-scene formats demoed live, or starting M4's builder work).
+The digital-woman subject now has a real illustration instead of placeholder shapes.
+No forced next task — see `NEXT_TASK.md` for candidate directions (apply the same
+illustration approach to the WebGL scene for visual parity, refine/iterate on this
+design further, additional scene formats demoed live, or starting M4's builder work).

@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import type { SceneConfig, SceneLayer } from '../scene'
 import { selectActiveLayers } from '../scene'
 import { createCssRendererHost } from '../renderer/browser/cssRendererHost'
+import { SubjectPortrait } from './SubjectPortrait'
 
 type SceneFallbackProps = { scene: SceneConfig }
 
@@ -14,10 +15,7 @@ function renderLayer(layer: SceneLayer) {
     case 'portrait':
       return (
         <div key={layer.id} className="scene__subject" style={style} aria-hidden="true">
-          <div className="subject__halo" />
-          <div className="subject__head" />
-          <div className="subject__neck" />
-          <div className="subject__shoulders" />
+          <SubjectPortrait />
         </div>
       )
     case 'code-rain': {

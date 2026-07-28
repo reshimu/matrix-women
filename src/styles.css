@@ -15,11 +15,11 @@ h1 { margin: 0 0 .9rem; max-width: 11ch; font-size: clamp(2.65rem, 7vw, 6.75rem)
 .scene__aura { z-index: -1; background: radial-gradient(circle at 65% 42%, #8cf9d32b 0 7%, transparent 32%); filter: brightness(var(--aura-intensity, 1)); }
 .scene__rain { z-index: -1; overflow: hidden; display: flex; justify-content: space-around; color: #7be9d122; font: 700 clamp(1.3rem, 2.8vw, 2.4rem)/1.1 ui-monospace, monospace; letter-spacing: .2em; }
 .scene__rain span { writing-mode: vertical-rl; display: block; height: 160%; animation: descend 13s linear infinite; }
-.scene__subject { z-index: 0; inset: auto clamp(-8rem, 2vw, 3rem) 0 auto; width: min(60vw, 42rem); height: min(90vw, 50rem); filter: drop-shadow(0 0 4rem #63f0cc44); }
-.subject__halo { position: absolute; top: 8%; left: 12%; width: 76%; aspect-ratio: 1; border: 1px solid #a7f9e250; border-radius: 50%; box-shadow: inset 0 0 7rem #8cf9d31c, 0 0 5rem #8cf9d31c; }
-.subject__head { position: absolute; top: 19%; left: 29%; width: 43%; height: 40%; border-radius: 48% 52% 43% 45%; background: linear-gradient(116deg, #a1edd6 0%, #3d8e87 49%, #0b2931 100%); box-shadow: inset 1.6rem 0 3rem #dbfff866; }
-.subject__neck { position: absolute; top: 53%; left: 40%; width: 22%; height: 18%; background: linear-gradient(90deg, #6ab8a9, #17464c); }
-.subject__shoulders { position: absolute; bottom: -8%; left: 9%; width: 83%; height: 37%; border-radius: 48% 52% 0 0; background: linear-gradient(100deg, #2d7172, #081a25 75%); }
+.scene__subject { z-index: 0; inset: auto clamp(-6rem, 2vw, 3rem) 0 auto; width: min(46vw, 32rem); height: min(78vw, 44rem); filter: drop-shadow(0 0 4rem #63f0cc33); }
+.scene__subject svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.subject__figure { filter: drop-shadow(0 .2rem .6rem #04120f66); }
+.subject__highlight { animation: shimmer 7s ease-in-out infinite; }
+.scene--still .subject__highlight { animation: none; }
 .scene__particles { z-index: 1; }
 .scene__webgl-canvas { position: absolute; inset: 0; z-index: -1; width: 100%; height: 100%; display: block; }
 .particle { position: absolute; width: .35rem; height: .35rem; border-radius: 50%; background: #8cf9d3; box-shadow: 0 0 .6rem #8cf9d3aa; animation: drift 6s ease-in-out infinite; }
@@ -27,6 +27,7 @@ h1 { margin: 0 0 .9rem; max-width: 11ch; font-size: clamp(2.65rem, 7vw, 6.75rem)
 .scene--paused .scene__rain span, .scene--paused .particle { animation-play-state: paused; }
 @keyframes descend { from { transform: translateY(-8%); } to { transform: translateY(42%); } }
 @keyframes drift { 0%, 100% { transform: translateY(0); opacity: .35; } 50% { transform: translateY(-1.1rem); opacity: 1; } }
+@keyframes shimmer { 0%, 100% { stroke-opacity: .18; } 50% { stroke-opacity: .4; } }
 @media (max-width: 640px) { .scene { align-items: end; min-height: 100svh; padding-bottom: 2.5rem; } .scene__subject { opacity: .54; inset: auto -5rem 2rem auto; width: 24rem; height: 32rem; } .scene__content { align-self: end; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; } }
 

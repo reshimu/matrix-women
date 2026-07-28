@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-07-27 — Digital-woman subject: real illustration
+
+- Added `src/components/SubjectPortrait.tsx`: a real hand-authored SVG illustration,
+  replacing the placeholder CSS blob shapes (`.subject__halo/head/neck/shoulders`
+  divs with border-radius/gradient hacks). Design: symmetric, front-facing, faceless
+  silhouette — head/neck/shoulders as a single half-path mirrored via SVG
+  `transform="translate(400,0) scale(-1,1)"` (guarantees perfect symmetry, not
+  hand-duplicated coordinates), a soft halo ring + radial glow behind the head, a
+  darker flowing hair shape, thin strand-highlight lines confined within the hair
+  silhouette, and a subtle vertical center-face light highlight.
+- Deliberately faceless/symbolic rather than photorealistic: matches `AGENTS.md`'s
+  "serene, intelligent, dignified, feminine, ethereal, symbolic, non-sexualized"
+  requirement and avoids uncanny-valley risk entirely. Fully inline SVG — no external
+  image service, no unlicensed artwork, per `PROJECT_SPEC.md`'s asset constraint.
+- **This session's screenshot tooling was fundamentally broken**: the sandboxed
+  browser pane doesn't composite frames (established earlier this session), and
+  Claude in Chrome's automated tab turned out to have a genuine `0×0` viewport
+  (confirmed via a failed `resize_window` call — "bounds must be at least 50% within
+  visible screen space"). Worked around it by rasterizing the SVG directly to PNG
+  (`npx resvg-cli`) and reading the resulting image. Iterated 4 versions this way: v1
+  read as a snowman (no neck definition, hair looked like a cloak, not hair); v2
+  fixed proportions via the clean mirrored half-path approach; v3 added strand
+  highlights that crossed over the torso and looked like scratches (anatomically
+  backwards — hair falls behind wider shoulders, not draped over the front); v4
+  confined the strand highlights within the hair silhouette, which read correctly.
+- Confirmed the shipped component matches: extracted the real DOM's
+  `.scene__subject svg` output from the running dev server (temporarily forcing the
+  CSS-fallback branch via the same override-then-revert pattern used for prior
+  renderer-branch checks this session, then reverting) and confirmed it's
+  byte-identical to the verified rasterized preview.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (7 files/19 tests, unchanged —
+  this is a visual asset, not new testable logic), `pnpm build`, `pnpm test:consumer`
+  all pass. No console errors at 1440×900 or 320×700 in a live dev server.
+- Sent the final rasterized preview image directly to Shimon.
+
 ## 2026-07-27 — Next.js consumption proof
 
 - Added `pnpm-workspace.yaml` (`packages: ['.', 'fixtures/*']`) and

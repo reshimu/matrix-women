@@ -79,3 +79,21 @@
       `Active layers: subject, matrix-rain, ambient-light`), no console errors.
 - [x] Root `pnpm lint`/`pnpm typecheck`/`pnpm test`/`pnpm build` all still pass
       unaffected after adding the workspace member.
+
+## Digital-woman subject illustration (2026-07-27)
+
+- [x] `AGENTS.md`'s visual requirement — "serene, intelligent, dignified, feminine,
+      ethereal, symbolic, and non-sexualized" — addressed by a real hand-authored SVG
+      illustration (`src/components/SubjectPortrait.tsx`), replacing the earlier
+      placeholder CSS blob shapes.
+- [x] No external image service or unlicensed artwork — fully inline, hand-coded SVG
+      paths and gradients, matching `PROJECT_SPEC.md`'s asset-representation
+      constraint.
+- [x] Faceless/symbolic by design rather than photorealistic — avoids uncanny-valley
+      risk and reads as dignified/ethereal per the spec's own vocabulary.
+- [x] Visually verified via rasterized-PNG inspection (this session's screenshot
+      tooling was fundamentally broken — see `ROADMAP.md` for the workaround) across
+      4 design iterations, and confirmed the shipped component's live DOM output is
+      byte-identical to the verified preview.
+- [x] Full validation (`typecheck`/`lint`/`test`/`build`/`test:consumer`) passes; no
+      console errors at 1440×900 or 320×700 in a live dev server.

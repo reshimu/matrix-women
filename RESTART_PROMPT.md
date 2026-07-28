@@ -76,17 +76,26 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   real lint break (`react-refresh/only-export-components` false-positive on Next's
   required `metadata` export) by scoping the rule off for the fixture directory only.
   Added `pnpm test:nextjs-consumer` and a `.claude/launch.json` entry for `next dev`.
+- **(2026-07-27, digital-woman subject illustration)** Added
+  `src/components/SubjectPortrait.tsx`: a real hand-authored SVG replacing the
+  placeholder CSS blob divs — symmetric faceless silhouette (mirrored half-path via
+  SVG transform), soft halo, flowing hair with confined strand highlights, subtle
+  center-face light. This session's screenshot tools were fundamentally broken (see
+  Known risks); worked around it by rasterizing the SVG directly (`npx resvg-cli`) and
+  reading the PNG, iterating 4 versions until proportions read correctly (not the
+  earlier "snowman"). Confirmed the shipped component's live DOM output is
+  byte-identical to the verified preview.
 - Last full validation passed 2026-07-27: typecheck, lint, **7 Vitest files / 19
   tests**, both consumer fixtures (`test:consumer` and `test:nextjs-consumer`), demo
   build, and library build. Library artifact size unchanged (2.26 kB).
 
 ## Exact next task
 
-M3's WebGL path and the Next.js consumption proof are both done. No forced next
-task — see `NEXT_TASK.md` for candidate directions (M3 visual parity, demoing
-portrait/square formats live, starting M4's builder work, or accessibility/keyboard
-test coverage). Update all project records and this restart pack with factual
-validation evidence when done.
+The digital-woman subject now has a real illustration. No forced next task — see
+`NEXT_TASK.md` for candidate directions (further illustration refinement, WebGL visual
+parity, demoing portrait/square formats live, starting M4's builder work, or
+accessibility/keyboard test coverage). Update all project records and this restart
+pack with factual validation evidence when done.
 
 ## Non-negotiables
 
@@ -99,6 +108,13 @@ validation evidence when done.
 
 ## Known risks
 
+- **This session's screenshot tooling is fundamentally broken**: the sandboxed
+  browser pane doesn't composite frames, and Claude in Chrome's automated tab has a
+  genuine `0×0` viewport (confirmed — `resize_window` failed with "bounds must be at
+  least 50% within visible screen space"). Worked around it for static SVG content
+  via `npx resvg-cli` rasterization, but this can't verify animation, canvas/WebGL
+  output, or real interaction. Check whether a properly visible browser window is
+  available another way before relying on screenshots for future visual work.
 - Only a literal human-eyes-on-screen check of the WebGL animation/resize behavior
   remains unverified — every automated verification path available this session has
   been exhausted and passed (see spot-check evidence above). Low risk: both APIs used

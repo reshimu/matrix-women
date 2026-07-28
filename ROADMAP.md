@@ -177,3 +177,34 @@ plain-Node fixture existed. Set up a real second proof:
   typecheck`, `pnpm lint`, `pnpm test` (7 files/19 tests, unchanged), `pnpm build`, and
   `pnpm test:consumer` all still pass — the workspace addition didn't disturb anything
   pre-existing.
+
+## Digital-woman subject: real illustration (2026-07-27)
+
+Replaced the placeholder CSS blob shapes (`.subject__halo/head/neck/shoulders`, plain
+divs with border-radius/gradient hacks) with a real hand-authored SVG illustration —
+`src/components/SubjectPortrait.tsx`. Design: a symmetric, front-facing, faceless
+silhouette (head/neck/shoulders as one continuous mirrored path — mirroring done via
+SVG `transform="translate(400,0) scale(-1,1)"` on a single half-path for guaranteed
+symmetry, not hand-duplicated coordinates), a soft halo ring + radial glow behind the
+head, a darker flowing "hair" shape framing the head/shoulders, thin strand-highlight
+lines confined within the hair silhouette, and a subtle vertical center-face highlight.
+Chosen deliberately over a literal/photorealistic face: faceless and symbolic reads as
+serene/dignified/ethereal per `AGENTS.md`'s requirements, and sidesteps uncanny-valley
+risk entirely.
+
+**Screenshot tooling was fully broken this session** — this session's sandboxed
+browser pane doesn't composite frames (established earlier), and Claude in Chrome's
+automated tab turned out to have a genuine `0×0` viewport with no visible screen
+surface (`resize_window` failed with "bounds must be at least 50% within visible
+screen space"), so screenshots and zoom captures both errored. Worked around this by
+rasterizing the SVG directly to PNG (`npx resvg-cli`) and reading the resulting image
+directly — iterated through 4 versions this way: v1 read as a snowman (no neck
+definition, hair looked like a cloak); v2 fixed proportions via a clean mirrored
+half-path (head/neck/shoulder read correctly); v3 added hair-strand highlights that
+crossed over the torso and looked like scratches (anatomically backwards — hair falls
+behind wider shoulders, not draped over the front); v4 confined the strand highlights
+within the hair silhouette itself, which resolved it. Confirmed the shipped component
+renders byte-identical markup to the verified rasterized preview by extracting the
+live DOM's actual `.scene__subject svg` output via the dev server (temporarily forcing
+the CSS-fallback branch, then reverting — same pattern used for prior renderer-branch
+checks this session).
