@@ -340,9 +340,8 @@ are a real, intended public API addition). Full evidence and per-slice detail in
 - Visual parity between the CSS and WebGL scenes — the WebGL scene uses an abstract
   gradient/glow/sparkle vocabulary plus the new portrait texture; it doesn't attempt
   the matrix-rain/lighting look of the CSS scene.
-- Whether to export the rendering components (`Scene`/`SceneFallback`/`SceneWebgl`)
-  publicly from `@matrix-ai/ui` — currently demo-only. This is a product decision,
-  not a technical blocker.
+- ~~Whether to export the rendering components publicly~~ — **resolved 2026-07-28**,
+  see the evidence section near the end of this file.
 - Full *responsive* builder scope (drag/drop layer editing, multi-scene management)
   beyond the minimal round-trip control panel now shipped.
 - A consolidated risk/performance-budget audit document — evidence exists piecemeal
@@ -378,8 +377,56 @@ are a real, intended public API addition). Full evidence and per-slice detail in
   unchanged), `pnpm build`, `pnpm test:consumer`. Library artifact size unchanged
   (2.69 kB).
 
+## Evidence as of 2026-07-28 (rendering components exported publicly, resolves R-006)
+
+- Added `src/react.ts`, a **second, separate** library entry (`@matrix-ai/ui/react`) —
+  not added to the main `src/index.ts` entry, per ADR-0004 (`DECISIONS.md`). Exports
+  `Scene`, `SceneFallback`, `SceneWebgl`, `SubjectPortrait`. `SceneBuilder`/
+  `DemoFormats` stay internal (dev tooling, not reusable production components).
+- `vite.library.config.ts` now builds both entries in one pass, with a shared chunk
+  for common code (`select.ts`) auto-extracted by Rollup rather than duplicated;
+  added the `@vitejs/plugin-react`/`@tailwindcss/vite` plugins (needed now that a
+  real entry has JSX/CSS); `build.lib.cssFileName: 'react'` names the emitted
+  stylesheet explicitly (Vite's default derives from `package.json`'s `name` field
+  otherwise — produced a confusing `ui.css` before this was set).
+- `package.json` exports map gained `./react` and `./react.css` (the latter must be
+  imported explicitly by the consumer — not auto-injected). `tsconfig.lib.json`
+  extended to include the four exported `.tsx` files and exclude `*.test.tsx`.
+- **Real bug found and fixed during verification:** `detectConstrainedDevice()` in
+  `Scene.tsx` had no try/catch (unlike its sibling `detectSupportsWebGL()`), so it
+  would throw under SSR in any runtime without a `navigator` global at all. Worked in
+  this session's Node 24 by version-specific luck (it polyfills
+  `navigator.hardwareConcurrency`), not by design — wrapped it in the same defensive
+  try/catch pattern.
+- **Real Rollup gotcha found and fixed:** a `'use client'` directive placed in each
+  individual component source file gets silently stripped once Rollup bundles them
+  together — only preserved when it's the first statement of the bundled *entry*
+  file. Moved the directive that actually matters to the top of `src/react.ts`.
+- Added `fixtures/react-consumer.mjs` (`pnpm test:react-consumer`): renders
+  `SceneFallback`/`SubjectPortrait`/`Scene` via `react-dom/server` in plain Node (no
+  bundler), asserting on the output HTML — mirrors the existing `test:consumer`
+  pattern for the main entry.
+- Added `fixtures/nextjs-consumer/app/react/page.tsx`: a Server Component (no
+  `'use client'` of its own) rendering `SceneFallback` from `@matrix-ai/ui/react`
+  directly — proves the shipped `'use client'` directive lets Next's App Router
+  treat it as a valid Server-Component-renders-Client-Component boundary. `next
+  build` statically prerendered it; `next dev` live-verified in a real browser:
+  correct styling applied (exact radial-gradient match via `getComputedStyle`, not
+  just unstyled HTML), portrait SVG present, no console errors.
+- Confirmed the existing `.` entry is completely unaffected — `fixtures/library-consumer.mjs`
+  and the root Next.js page still pass unmodified. The split-entry design (ADR-0004)
+  means a consumer who only wants config/validation never pulls in React-rendering
+  code, CSS, or WebGL/Canvas2D internals.
+- Rewrote `README.md`'s API documentation to cover both entries accurately, replacing
+  the "not in the package yet" framing (no longer true) with a real usage guide
+  including the `'use client'`/Next.js note and the required CSS import.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (13 files/43 tests,
+  unchanged), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
+  `pnpm test:nextjs-consumer`. New sizes: `dist/lib/index.js` 2.28 kB, `react.js`
+  20.19 kB (6.27 kB gzip), `react.css` 11.56 kB.
+
 ## Exact next task
 
-No forced next task. Remaining open items: whether to export the rendering
-components publicly, full M4 responsive-builder scope, and a consolidated
-risk/performance audit document. See `NEXT_TASK.md`.
+No forced next task. Remaining open items (see `RISK_PERFORMANCE_AUDIT.md` §5 and
+`NEXT_TASK.md`): a CI performance budget, full M4 responsive-builder scope, and
+visual regression tooling.

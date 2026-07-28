@@ -120,18 +120,35 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   still-open gap found during reconciliation: added `Scene.test.tsx` covering the
   webgl-vs-css branch decision (13 files/43 tests now, up from 12/40).
 
+- **(2026-07-28, rendering components exported publicly)** Added `src/react.ts`, a
+  **second, separate** library entry (`@matrix-ai/ui/react`, not merged into the main
+  `.` entry — ADR-0004), exporting `Scene`/`SceneFallback`/`SceneWebgl`/
+  `SubjectPortrait` plus a `@matrix-ai/ui/react.css` the consumer imports explicitly.
+  `'use client'` boundary verified against a real `next build`
+  (`fixtures/nextjs-consumer/app/react/page.tsx`, live-checked in a real browser: real
+  styling applied, no console errors); a new `fixtures/react-consumer.mjs` proves it
+  works standalone under plain Node via `react-dom/server`. The `.` entry is
+  completely unaffected — still zero DOM/CSS. Found and fixed two real bugs along the
+  way: `Scene.tsx`'s `detectConstrainedDevice()` had no try/catch (would throw under
+  SSR without a `navigator` global — worked by Node-version luck, not design); and a
+  `'use client'` directive placed in individual component files gets silently
+  stripped by Rollup once bundled — only the one at the top of the entry file
+  (`src/react.ts`) survives. This resolves audit R-006.
+
 ## Exact next task
 
-All release gates are checked. No forced next task — see `NEXT_TASK.md` for
-candidate product-direction choices (exporting rendering components publicly, a CI
-performance budget, full M4 responsive-builder scope, or visual regression tooling).
-Update all project records and this restart pack with factual validation evidence
-when done.
+All release gates are checked, and R-006 is resolved. No forced next task — see
+`NEXT_TASK.md` for candidate next steps (a CI performance budget, full M4
+responsive-builder scope, visual regression tooling, or considering an npm publish
+now that there's a real documented public API). Update all project records and this
+restart pack with factual validation evidence when done.
 
 ## Non-negotiables
 
 - React + TypeScript; Tailwind; Vite demo.
-- Public scene config remains renderer-independent and browser-free.
+- The main `@matrix-ai/ui` entry remains renderer-independent and browser-free — the
+  `@matrix-ai/ui/react` entry (rendering components) is deliberately the opt-in,
+  browser-only counterpart (ADR-0004), not an exception to this rule.
 - WebGL is enhancement only; CSS/Canvas/SVG fallback is mandatory.
 - Support 320px, reduced motion, keyboard access, lifecycle cleanup, hidden-document/offscreen pausing.
 - No backend/auth/accounts/payments/database/analytics/cloud storage or unlicensed external visual assets.

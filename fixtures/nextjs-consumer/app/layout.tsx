@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import '@matrix-ai/ui/react.css'
 
 export const metadata = {
   title: 'Matrix AI UI — Next.js consumer fixture',

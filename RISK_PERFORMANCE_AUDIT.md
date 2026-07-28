@@ -1,6 +1,10 @@
 # Risk & performance audit
 
-**Date:** 2026-07-28
+**Date:** 2026-07-28 (initial); **updated same day** after the rendering components
+were exported publicly (`@matrix-ai/ui/react`, ADR-0004) — §2.1 and the executive
+summary below were revised to match; the rest of the document's findings (risk
+register, test coverage, release-gate verdict) still hold and weren't invalidated by
+that change.
 **Scope:** Consolidates risk and performance evidence that was previously scattered
 across `PROJECT_STATE.md`, `RISKS.md`, and `ACCEPTANCE_CRITERIA.md` into one document,
 per the last open item on `ACCEPTANCE_CRITERIA.md`'s release gates. Every number below
@@ -12,21 +16,25 @@ called out explicitly rather than silently repeated.
 
 ## 1. Executive summary
 
-The published package (`@matrix-ai/ui`) is a **2.69 kB** (1.13 kB gzip)
-configuration/validation/selection library with zero runtime dependencies and zero
-DOM access — it is not the performance risk surface. The performance and risk surface
-that matters is the **reference rendering implementation** in `src/components/`
-(demo-only, not shipped): a CSS/SVG fallback scene and a WebGL scene, both driven by
-the same `SceneConfig`. That implementation is small, has no network-fetched assets,
-and its main runtime cost is a single fullscreen-triangle WebGL draw call per frame —
-all real risks identified below are either already mitigated or explicitly accepted
-and named, not silently unaddressed.
+The published package now ships **two entries**: `@matrix-ai/ui` — a **2.28 kB**
+configuration/validation/selection core with zero runtime dependencies and zero DOM
+access — and `@matrix-ai/ui/react` — **20.19 kB** (6.27 kB gzip) of actual rendering
+components (`Scene`, `SceneFallback`, `SceneWebgl`, `SubjectPortrait`), plus an
+**11.56 kB** stylesheet the consumer imports explicitly. The rendering components are
+no longer demo-only — they're the same code this repo's demo uses, exported behind a
+deliberately separate subpath (ADR-0004) so consumers who only want config/validation
+never pull in React-rendering code, CSS, or WebGL/Canvas2D internals. Main runtime cost
+of the rendering layer is a single fullscreen-triangle WebGL draw call per frame with
+O(1) per-pixel shader cost, and there are zero network-fetched assets in either
+renderer — all real risks identified below are either already mitigated or explicitly
+accepted and named, not silently unaddressed.
 
-**Verdict: the published library is production-ready for its stated, narrow scope**
-(config/validation/selection primitives). **The reference rendering implementation is
-demo-quality, verified working, but has known gaps** (listed in §4 and §5) that would
-need addressing before anyone ships it as *the* production UI rather than a reference
-to build on.
+**Verdict: the published library is production-ready for its stated scope** —
+config/validation/selection primitives, and now a working, tested, publicly-exported
+reference rendering layer for both Vite and Next.js (App Router `'use client'`
+boundary verified against a real `next build`). Remaining open items (§4, §5) are
+scoped product decisions (a CI performance budget, full M4 builder scope, visual
+regression tooling), not defects in what ships today.
 
 ---
 
@@ -34,21 +42,32 @@ to build on.
 
 ### 2.1 Published package footprint (what a consumer actually installs)
 
-Freshly rebuilt 2026-07-28:
+Freshly rebuilt 2026-07-28, after the `@matrix-ai/ui/react` export landed:
 
 | Artifact | Size | Gzip |
 | --- | --- | --- |
-| `dist/lib/index.js` | 2.69 kB | 1.13 kB |
+| `dist/lib/index.js` (`@matrix-ai/ui`) | 2.28 kB | 1.01 kB |
+| `dist/lib/react.js` (`@matrix-ai/ui/react`) | 20.19 kB | 6.27 kB |
+| `dist/lib/react.css` (`@matrix-ai/ui/react.css`) | 11.56 kB | 3.51 kB |
+| `dist/lib/select-*.js` (shared chunk, both entries import it) | 0.48 kB | 0.29 kB |
 
-- Zero runtime `dependencies` in `package.json` — only `react`/`react-dom` as
-  `peerDependencies` (`>=18`), which the consumer already has.
-- No images, fonts, or other network-fetched assets in the public entry — it's pure
-  TypeScript data/logic (`src/scene/`, `src/renderer/select.ts`,
-  `src/renderer/webglUniforms.ts`, `src/renderer/portraitLayout.ts`).
-- Confirmed via repeated `pnpm test:consumer`/`pnpm test:nextjs-consumer` runs
-  throughout this project's history that this size has stayed flat (2.26 kB → 2.69 kB
-  reflects one real addition — `exportSceneConfig`/`importSceneConfig` — not
-  accidental bloat) even as the demo app and reference renderers grew substantially.
+- A consumer who imports only `@matrix-ai/ui` (config/validation/selection) pays only
+  the first row — 2.28 kB, unchanged in spirit from before the split (the drop from
+  2.69 kB to 2.28 kB is `select.ts` moving into the shared chunk both entries use, not
+  a size regression of the pure entry's own code).
+- A consumer who also imports `@matrix-ai/ui/react` pays the second and third rows on
+  top — real rendering components (WebGL shader/texture code, the CSS scene, the
+  portrait SVG illustration) plus their stylesheet, not injected automatically.
+- Zero runtime `dependencies` in `package.json` for either entry — only
+  `react`/`react-dom` as `peerDependencies` (`>=18`), which the consumer already has.
+- No images, fonts, or other network-fetched assets in either entry — the
+  config/validation core is pure TypeScript data/logic, and the rendering layer's
+  digital-woman illustration is procedurally drawn (SVG paths, rasterized to a
+  Canvas2D-then-WebGL-texture for the WebGL path), not a network-fetched image.
+- Confirmed via repeated `pnpm test:consumer`/`pnpm test:react-consumer`/
+  `pnpm test:nextjs-consumer` runs that these sizes reflect real, deliberate additions
+  (`exportSceneConfig`/`importSceneConfig`, then the whole rendering layer) — not
+  accidental bloat.
 
 ### 2.2 Demo/reference app footprint (not shipped, but real if someone copies it)
 
@@ -138,7 +157,7 @@ never removed; reconciled here against actual current code, not just copied).
 | R-003 | Low | External or unlicensed artwork could violate the asset-provenance directive. | Resolved | All visual assets are inline, hand-authored SVG paths/gradients — no external image service, no unlicensed artwork, in either renderer. |
 | R-004 | Medium | Particle layer renders one DOM node per particle (up to 200). | Open, low-likelihood | See §2.4. Validation-capped, not unbounded; no shipped config approaches the ceiling. |
 | R-005 | Medium | No CI-enforced performance budget (bundle size, etc.). | Open | Recommended next step (§5); not yet implemented. |
-| R-006 | Low | The public package doesn't export the rendering components — only config/validation/selection. | Open, by design (undecided) | Documented explicitly and honestly in `README.md`'s "What's *not* in the package yet" rather than left implicit. Product decision pending (see `NEXT_TASK.md`). |
+| R-006 | Low | The public package doesn't export the rendering components — only config/validation/selection. | **Resolved 2026-07-28** | `Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait` now exported via a separate `@matrix-ai/ui/react` entry (ADR-0004), with a matching `@matrix-ai/ui/react.css`, a `'use client'` boundary verified against a real `next build`, and a new consumer fixture (`fixtures/react-consumer.mjs`). The `.` entry is unaffected — still zero DOM/CSS dependencies. |
 | R-007 | Low | No real-browser continuous-animation/resize test automation exists. | Open, environment-constrained | Every tool available across this project's sessions has a dead-`rAF`/non-compositing limitation; worked around via static verification and manual real-browser checks (see §3). Not closeable without a different test environment (e.g., real Playwright/Puppeteer with an actual display). |
 | R-008 | Low | WebGL's visual vocabulary (procedural gradient/rain/glow) is an approximation of the CSS scene, not pixel-identical. | Accepted | Intentional scope decision from the visual-parity pass — matches position/color/behavior, not a literal recreation of CSS's falling-text columns. |
 | R-009 | Informational | Full M4 responsive-builder scope (drag/drop layer editing, multi-scene management) exceeds the round-trip minimum currently shipped (`SceneBuilder.tsx`). | Open, scoped | `SceneBuilder.tsx` satisfies the release-gate wording ("round-trips scene configuration") but is a minimal control panel, not a full visual builder product. |
@@ -148,11 +167,10 @@ never removed; reconciled here against actual current code, not just copied).
 ## 5. Recommended next steps (not started — this document is an audit, not new work)
 
 1. **CI performance budget.** Add a size-limit check (e.g., `size-limit` or a simple
-   `stat`-based script in CI) that fails the build if `dist/lib/index.js` regresses
-   past a threshold (e.g., 5 kB) — currently nothing would catch an accidental bloat
-   regression automatically.
-2. **Decide R-006** (public component exports) — the single biggest open product
-   decision blocking a "is this the whole product or just the config layer" answer.
+   `stat`-based script in CI) that fails the build if `dist/lib/index.js` or
+   `dist/lib/react.js` regresses past a threshold — currently nothing would catch an
+   accidental bloat regression automatically.
+2. ~~Decide R-006 (public component exports)~~ — **done 2026-07-28**, see R-006.
 3. **Canvas-based particle rendering** if any real usage approaches the 200-particle
    validation ceiling on low-end/mobile hardware (R-004) — not needed at current
    usage.
@@ -168,7 +186,7 @@ never removed; reconciled here against actual current code, not just copied).
 | Typecheck and lint pass | ✅ Pass (verified 2026-07-28) |
 | Relevant unit/lifecycle/browser/accessibility/reduced-motion/asset-failure tests pass | ✅ Pass — 13 files/43 tests (see §3 for what's covered vs. named-open) |
 | Visual output inspected at required breakpoints | ✅ Done repeatedly across sessions at 1440×900 and 320×700, both renderers, all three formats |
-| Package independently consumable in Vite and Next.js | ✅ Both proven — Vite via the demo itself, Next.js via `fixtures/nextjs-consumer/` with a real `next build`/`next dev` |
+| Package independently consumable in Vite and Next.js | ✅ Both proven, for both entries — Vite via the demo itself, Next.js via `fixtures/nextjs-consumer/` (`.` entry at `/`, `@matrix-ai/ui/react` at `/react` with a verified Server-Component-renders-Client-Component `'use client'` boundary) with a real `next build`/`next dev` |
 | Builder round-trips scene configuration | ✅ `SceneBuilder.tsx` + `exportSceneConfig`/`importSceneConfig`, round-trip-tested (`roundTrip.test.ts`) — minimal scope, not full M4 (R-009) |
 | Fallback, accessibility, performance evidence, risks, API documentation, clean-install results recorded | ✅ This document + `README.md` + a verified clean-install run (`rm -rf node_modules` + `pnpm install --frozen-lockfile` + full validation, recorded in `ROADMAP.md`) |
 | No unresolved critical or high-severity defect remains | ✅ Nothing in the risk register above is rated above Medium, and every Medium item has a named mitigation or is explicitly accepted |

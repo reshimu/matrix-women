@@ -8,6 +8,15 @@
     "outDir": "./dist/lib",
     "rootDir": "./src"
   },
-  "include": ["src/index.ts", "src/scene/**/*.ts", "src/renderer/**/*.ts"],
-  "exclude": ["src/**/*.test.ts"]
+  "include": [
+    "src/index.ts",
+    "src/react.ts",
+    "src/scene/**/*.ts",
+    "src/renderer/**/*.ts",
+    "src/components/Scene.tsx",
+    "src/components/SceneFallback.tsx",
+    "src/components/SceneWebgl.tsx",
+    "src/components/SubjectPortrait.tsx"
+  ],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }
