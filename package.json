@@ -12,7 +12,12 @@
     ".": {
       "types": "./dist/lib/index.d.ts",
       "import": "./dist/lib/index.js"
-    }
+    },
+    "./react": {
+      "types": "./dist/lib/react.d.ts",
+      "import": "./dist/lib/react.js"
+    },
+    "./react.css": "./dist/lib/react.css"
   },
   "type": "module",
   "scripts": {
@@ -21,6 +26,7 @@
     "build:demo": "tsc -b && vite build",
     "build:library": "tsc -p tsconfig.lib.json && vite build --config vite.library.config.ts",
     "test:consumer": "pnpm build:library && node fixtures/library-consumer.mjs",
+    "test:react-consumer": "pnpm build:library && node fixtures/react-consumer.mjs",
     "test:nextjs-consumer": "pnpm build:library && pnpm --filter matrix-ai-ui-nextjs-consumer build",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",

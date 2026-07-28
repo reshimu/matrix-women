@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import type { SceneConfig } from '../scene'
 import { selectRenderer } from '../renderer/select'
@@ -16,10 +18,14 @@ function detectSupportsWebGL(): boolean {
 }
 
 function detectConstrainedDevice(): boolean {
-  const nav = navigator as Navigator & { deviceMemory?: number }
-  if (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 2) return true
-  if (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency <= 2) return true
-  return false
+  try {
+    const nav = navigator as Navigator & { deviceMemory?: number }
+    if (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 2) return true
+    if (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 2) return true
+    return false
+  } catch {
+    return false
+  }
 }
 
 export function Scene({ scene }: SceneProps) {

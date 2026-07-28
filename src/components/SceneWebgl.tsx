@@ -1,3 +1,5 @@
+'use client'
+
 import { useEffect, useId, useMemo, useRef } from 'react'
 import type { SceneConfig } from '../scene'
 import { createWebglRendererHost } from '../renderer/browser/webglRendererHost'

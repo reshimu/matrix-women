@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-07-28 — Export rendering components publicly (`@matrix-ai/ui/react`)
+
+- Added `src/react.ts` as a **second, separate** library entry — not merged into the
+  main `@matrix-ai/ui` entry — exporting `Scene`, `SceneFallback`, `SceneWebgl`,
+  `SubjectPortrait`. See `DECISIONS.md` ADR-0004 for the full rationale.
+  `SceneBuilder`/`DemoFormats` stay internal (dev tooling, not reusable production
+  components).
+- `vite.library.config.ts` now builds both entries in one pass; Rollup automatically
+  extracts their shared dependency into a small common chunk. Added the
+  `@vitejs/plugin-react`/`@tailwindcss/vite` plugins (needed now that a real entry
+  has JSX/CSS). `build.lib.cssFileName: 'react'` names the emitted stylesheet
+  explicitly.
+- `package.json` exports map gained `./react` (`dist/lib/react.js`) and
+  `./react.css` (`dist/lib/react.css`, imported explicitly by the consumer — not
+  auto-injected). `tsconfig.lib.json` extended accordingly.
+- **Real bug found and fixed:** `Scene.tsx`'s `detectConstrainedDevice()` had no
+  try/catch (unlike its sibling `detectSupportsWebGL()`), so it would throw under SSR
+  in any runtime without a `navigator` global. Worked in this session's Node 24 by
+  version-specific luck, not by design — wrapped it in the same defensive try/catch.
+- **Real Rollup gotcha found and fixed:** a `'use client'` directive placed in each
+  individual component source file gets silently stripped once bundled together —
+  only preserved at the top of the bundled entry file. Moved the one that matters to
+  `src/react.ts`.
+- Added `fixtures/react-consumer.mjs` (`pnpm test:react-consumer`): renders
+  `SceneFallback`/`SubjectPortrait`/`Scene` via `react-dom/server` in plain Node,
+  asserting on the output HTML.
+- Added `fixtures/nextjs-consumer/app/react/page.tsx`: a Server Component rendering
+  `SceneFallback` from `@matrix-ai/ui/react` directly, proving the `'use client'`
+  boundary works under Next's App Router. `next build` statically prerendered it;
+  `next dev` live-verified in a real browser: correct styling applied, no errors.
+- Rewrote `README.md` to document both entries accurately, replacing the "not in the
+  package yet" framing (no longer true).
+- This resolves audit R-006 (`RISK_PERFORMANCE_AUDIT.md`).
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (13 files/43 tests,
+  unchanged), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
+  `pnpm test:nextjs-consumer` all pass. New sizes: `dist/lib/index.js` 2.28 kB,
+  `react.js` 20.19 kB (6.27 kB gzip), `react.css` 11.56 kB.
+
 ## 2026-07-28 — Consolidated risk/performance audit
 
 - Added `RISK_PERFORMANCE_AUDIT.md`, consolidating risk and performance evidence that

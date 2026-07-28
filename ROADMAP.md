@@ -354,3 +354,58 @@ document — this was the last open item on the release-gate checklist.
 
 Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (13 files/43 tests, up from
 12/40), `pnpm build`, `pnpm test:consumer`. Library artifact size unchanged (2.69 kB).
+
+## Rendering components exported publicly (2026-07-28) — resolves audit R-006
+
+Added `src/react.ts` as a **second, separate library entry** (`@matrix-ai/ui/react`),
+rather than adding the rendering components to the main `src/index.ts` entry — see
+`DECISIONS.md` ADR-0004 for the full rationale. Exports `Scene`, `SceneFallback`,
+`SceneWebgl`, `SubjectPortrait`. `SceneBuilder`/`DemoFormats` stay internal (dev
+tooling, not reusable production components).
+
+- `vite.library.config.ts` now builds two entries (`index`, `react`) in one pass —
+  Rollup automatically extracts their shared dependency (`select.ts`) into a small
+  common chunk rather than duplicating it. Added the `@vitejs/plugin-react` and
+  `@tailwindcss/vite` plugins (needed now that a real entry contains JSX/CSS).
+  `build.lib.cssFileName: 'react'` controls the emitted stylesheet name explicitly
+  (Vite's default naming derives from `package.json`'s `name` field otherwise, which
+  produced a confusingly-named `ui.css`).
+- `package.json` exports map gained `./react` (`dist/lib/react.js`) and `./react.css`
+  (`dist/lib/react.css`, which consumers must import explicitly — not auto-injected).
+- `tsconfig.lib.json`'s `include` extended to the four exported `.tsx` components
+  (not `SceneBuilder.tsx`/`DemoFormats.tsx`); `exclude` extended to `*.test.tsx`.
+- **Real bug found and fixed during verification:** `Scene.tsx`'s
+  `detectConstrainedDevice()` had no try/catch (unlike its sibling
+  `detectSupportsWebGL()`), so it would throw under SSR in any runtime where
+  `navigator` isn't a global at all. It happened to work in this session's Node 24
+  (which polyfills `navigator.hardwareConcurrency`), but that's runtime-version luck,
+  not a guarantee — wrapped it in the same defensive try/catch pattern.
+- **Real Rollup gotcha found and fixed:** a `'use client'` directive placed in each
+  individual component source file (`Scene.tsx`, `SceneFallback.tsx`,
+  `SceneWebgl.tsx`) gets silently stripped once Rollup bundles them together — it's
+  only preserved when it's the first statement of the bundled *entry* file. Moved the
+  directive that actually matters to the top of `src/react.ts`; kept the per-file ones
+  as accurate (if cosmetic, post-bundling) source-level documentation.
+- Added `fixtures/react-consumer.mjs` (new `pnpm test:react-consumer` script):
+  renders `SceneFallback`, `SubjectPortrait`, and `Scene` via `react-dom/server` in
+  plain Node (no bundler) and asserts on the output HTML — proves the built
+  `dist/lib/react.js` is genuinely consumable standalone, mirroring the existing
+  `test:consumer` pattern for the main entry.
+- Added `fixtures/nextjs-consumer/app/react/page.tsx`: a Server Component (no
+  `'use client'` of its own) that imports and renders `SceneFallback` from
+  `@matrix-ai/ui/react` directly — proving the shipped `'use client'` directive lets
+  Next's App Router treat it as a valid Server-Component-renders-Client-Component
+  boundary. `next build` statically prerendered it; `next dev` live-verified in a real
+  browser: correct styling applied (exact radial-gradient match, not just unstyled
+  HTML), portrait SVG present, no console errors.
+- Confirmed the existing `.` entry is completely unaffected: `fixtures/library-consumer.mjs`
+  and the root `fixtures/nextjs-consumer/app/page.tsx` (the pure-entry proof) still
+  pass unmodified — the split entry design means consumers who only want
+  config/validation never pull in React-rendering code, CSS, or WebGL/Canvas2D
+  internals.
+
+Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (13 files/43 tests, unchanged —
+this is build/export wiring, not new testable pure logic), `pnpm build`,
+`pnpm test:consumer`, `pnpm test:react-consumer`, `pnpm test:nextjs-consumer` (both
+Next.js pages). New artifact sizes: `dist/lib/index.js` 2.28 kB, `dist/lib/react.js`
+20.19 kB (6.27 kB gzip), `dist/lib/react.css` 11.56 kB.

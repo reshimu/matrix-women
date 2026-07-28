@@ -42,9 +42,10 @@
       fixture workspace member) followed by `pnpm install --frozen-lockfile` succeeded,
       and every validation command (`typecheck`, `lint`, `test`, `build`,
       `test:consumer`, `test:nextjs-consumer`) passed from that fresh install.
-- [x] API documentation recorded — see `README.md`, including an explicit, honest
-      statement of what is *not* yet in the public package (the rendering components
-      are demo-only, not exported).
+- [x] API documentation recorded — see `README.md`, covering both public entries
+      (`@matrix-ai/ui` config/validation/selection, `@matrix-ai/ui/react` rendering
+      components) accurately, including the required `react.css` import and the
+      `'use client'`/Next.js note.
 - [x] Fallback/performance evidence and a full risk audit are now consolidated in
       [`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md) — real, freshly-verified
       bundle sizes (published library 2.69 kB / demo 211.56 kB JS), a runtime
@@ -58,8 +59,27 @@
       stale WebGL canvas resize listener, and a duplicate-DOM-id accessibility bug
       that would have broken `aria-labelledby` the moment more than one scene was
       mounted on a page (fixed via `useId`). Open, non-blocking items are tracked in
-      `NEXT_TASK.md` (whether to export the rendering components publicly, full M4
-      builder scope beyond this round-trip minimum).
+      `NEXT_TASK.md` (a CI performance budget, full M4 builder scope beyond this
+      round-trip minimum, visual regression tooling).
+
+## Rendering components exported publicly (2026-07-28) — resolves audit R-006
+
+- [x] `Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait` exported via a separate
+      `@matrix-ai/ui/react` entry (`DECISIONS.md` ADR-0004), not merged into the main
+      browser-free `@matrix-ai/ui` entry — confirmed the main entry is completely
+      unaffected (`fixtures/library-consumer.mjs` still passes unmodified).
+- [x] A `'use client'` directive at the top of the bundled `react.js` output lets
+      Next.js App Router Server Components render these components directly —
+      verified against a real `next build`/`next dev`
+      (`fixtures/nextjs-consumer/app/react/page.tsx`), including a live browser check
+      that real styling is applied (not just unstyled HTML) and no console errors.
+- [x] A new `fixtures/react-consumer.mjs` (`pnpm test:react-consumer`) proves the
+      built artifact is consumable standalone under plain Node via
+      `react-dom/server`, mirroring the existing `test:consumer` pattern.
+- [x] Two real bugs found and fixed during verification: a missing try/catch in
+      `detectConstrainedDevice()` that would throw under SSR without a `navigator`
+      global, and a `'use client'` directive placement gotcha (Rollup only preserves
+      it at the top of the bundled entry file, not in individual source files).
 
 ## WebGL/CSS visual parity (2026-07-27)
 
