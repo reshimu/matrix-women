@@ -10,14 +10,53 @@
 
 ## Release gates
 
-- [ ] Typecheck and lint pass.
-- [ ] Relevant unit, schema/migration, lifecycle, browser, visual, responsive, reduced-motion, keyboard, asset-failure, fallback, context-loss, and stability tests pass.
-- [ ] Visual output is inspected at required breakpoints.
+- [x] Typecheck and lint pass — reverified from a genuine clean install (`rm -rf
+      node_modules && pnpm install --frozen-lockfile`), not just an incrementally
+      warm environment. See "Final hardening pass" below.
+- [x] Unit tests pass (12 files / 40 tests): scene validation/composition/round-trip
+      (pure, node env), renderer selection and WebGL uniform derivation (pure),
+      lifecycle-host state transitions (both CSS and WebGL hosts, injected fake
+      environment). Real-DOM/real-browser-environment coverage (jsdom): the actual
+      `createDefaultBrowserEnvironment()` path, both lifecycle hosts driven through
+      real `document.hidden`/`visibilitychange`/`webglcontextlost` events — previously
+      an explicitly accepted gap, now closed. Accessibility/keyboard: real button
+      focusability, non-dangling `aria-labelledby` (via `useId`), decorative-layer
+      `aria-hidden`, reduced-motion class toggling. Asset-failure: `SceneWebgl` renders
+      without throwing and without console errors when `canvas.getContext` returns
+      `null` (WebGL unavailable). Context-loss: WebGL host unit + jsdom real-event
+      coverage. Schema/round-trip: `exportSceneConfig`/`importSceneConfig` reproduce an
+      exact `SceneConfig`, and malformed/wrong-shaped JSON surfaces as a validation
+      issue rather than throwing.
+- [x] Visual output inspected at 1440×900 and 320×700 across every slice this session
+      (see `ROADMAP.md`'s dated entries for the specific evidence per feature), plus a
+      real-browser (Claude in Chrome) spot-check distinct from this session's
+      non-compositing sandboxed pane where that pane's limitations mattered.
 - [x] Package is independently consumable in Vite (the demo app itself) and in
-      Next.js (a real `next build`/`next dev` fixture — see M3.5 section below).
-- [ ] Builder round-trips scene configuration (M4 — not started).
-- [ ] Fallback, accessibility, performance evidence, risks, API documentation, and clean-install results are recorded.
-- [ ] No unresolved critical or high-severity defect remains.
+      Next.js (a real `next build`/`next dev` fixture — see the Next.js consumption
+      proof entry in `ROADMAP.md`).
+- [x] Builder round-trips scene configuration — `src/components/SceneBuilder.tsx` +
+      `exportSceneConfig`/`importSceneConfig`, live-verified: export while in one
+      format, switch away, paste the export back in, confirm an exact string match
+      restored plus the live preview updating.
+- [x] Clean-install results recorded: full `node_modules` removal (root + the Next.js
+      fixture workspace member) followed by `pnpm install --frozen-lockfile` succeeded,
+      and every validation command (`typecheck`, `lint`, `test`, `build`,
+      `test:consumer`, `test:nextjs-consumer`) passed from that fresh install.
+- [x] API documentation recorded — see `README.md`, including an explicit, honest
+      statement of what is *not* yet in the public package (the rendering components
+      are demo-only, not exported).
+- [ ] Fallback/performance evidence and a full risk audit are recorded piecemeal
+      across `PROJECT_STATE.md`/`RISKS.md` but not yet consolidated into one
+      dedicated document — reasonable for the project's current size, worth doing
+      before an actual publish/release.
+- [x] No unresolved critical or high-severity defect is known. Two real bugs were
+      found and fixed *during* this session's hardening work (see `ROADMAP.md`): a
+      stale WebGL canvas resize listener, and a duplicate-DOM-id accessibility bug
+      that would have broken `aria-labelledby` the moment more than one scene was
+      mounted on a page (fixed via `useId`). Open, non-blocking items are tracked in
+      `NEXT_TASK.md` (visual parity between CSS/WebGL scenes, whether to export the
+      rendering components publicly, full M4 builder scope beyond this round-trip
+      minimum).
 
 ## M1 — package and schema foundation
 

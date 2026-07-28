@@ -295,9 +295,59 @@ flagged above. Findings:
 - Sent the final rasterized image directly to Shimon so he could see it without
   needing his own dev environment running.
 
+## Evidence as of 2026-07-27 (hardening branch `webgl-portrait-texture`, PR #1)
+
+**Current milestone:** M1–M3 complete. M4 and M5 both **in progress** (not complete —
+see open items below). Not yet a fully "production-ready" release, but every gate that
+was checkable has been checked, and every gap found was either closed or named
+explicitly rather than glossed over.
+
+Five slices landed on a dedicated branch/PR, each independently validated:
+
+1. Ported the digital-woman illustration into the WebGL scene (shared artwork data,
+   Canvas2D→WebGL texture, format-aware positioning via `computePortraitBox`).
+2. Added real-DOM (`jsdom`) lifecycle test coverage — the actual
+   `createDefaultBrowserEnvironment()` path, previously untested, now exercised
+   through real `document.hidden`/`visibilitychange`/`webglcontextlost` events.
+3. Added accessibility/keyboard test coverage (`@testing-library/react`).
+4. Demoed `portrait`/`square` formats live in the demo app — surfaced and fixed a
+   real bug in the process: duplicate `id="scene-title"` across mounted scenes,
+   fixed via `useId()`.
+5. Built a minimal config-round-trip builder (`SceneBuilder.tsx` +
+   `exportSceneConfig`/`importSceneConfig`, now public exports), live-verified: an
+   exported config, after switching away and re-importing, reproduces an exact
+   string match, with the live preview updating correctly.
+
+**Final hardening pass:**
+- Added an asset-failure test: `SceneWebgl` renders without throwing or logging
+  console errors when `canvas.getContext` returns `null`.
+- Wrote `README.md` — real public API documentation, including an explicit,
+  deliberately honest statement that the rendering components are demo-only and not
+  yet exported publicly (an open decision, not implied as shipped).
+- Ran a genuine clean-install verification: `rm -rf node_modules` (root + the
+  Next.js fixture) → `pnpm install --frozen-lockfile` → full validation suite, all
+  passing from the fresh install.
+- Reconciled `ACCEPTANCE_CRITERIA.md`'s release gates against actual verified state.
+
+Test suite: **12 files / 40 tests** (up from 7/19 at the start of this branch).
+Library artifact: 2.69 kB (up from 2.26 kB — `exportSceneConfig`/`importSceneConfig`
+are a real, intended public API addition). Full evidence and per-slice detail in
+`ROADMAP.md`'s "Hardening branch" entry.
+
+## Open items (honestly not done — see `NEXT_TASK.md`)
+
+- Visual parity between the CSS and WebGL scenes — the WebGL scene uses an abstract
+  gradient/glow/sparkle vocabulary plus the new portrait texture; it doesn't attempt
+  the matrix-rain/lighting look of the CSS scene.
+- Whether to export the rendering components (`Scene`/`SceneFallback`/`SceneWebgl`)
+  publicly from `@matrix-ai/ui` — currently demo-only. This is a product decision,
+  not a technical blocker.
+- Full *responsive* builder scope (drag/drop layer editing, multi-scene management)
+  beyond the minimal round-trip control panel now shipped.
+- A consolidated risk/performance-budget audit document — evidence exists piecemeal
+  across this file and `RISKS.md` but hasn't been synthesized into one document.
+
 ## Exact next task
 
-The digital-woman subject now has a real illustration instead of placeholder shapes.
-No forced next task — see `NEXT_TASK.md` for candidate directions (apply the same
-illustration approach to the WebGL scene for visual parity, refine/iterate on this
-design further, additional scene formats demoed live, or starting M4's builder work).
+No forced next task — the hardening branch (PR #1, `webgl-portrait-texture`) is ready
+for review/merge. See `NEXT_TASK.md` for candidate directions once merged.

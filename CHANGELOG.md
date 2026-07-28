@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-07-27 — Hardening branch (`webgl-portrait-texture`, PR #1)
+
+Five slices plus a final hardening pass, each independently validated
+(typecheck/lint/test/build/consumer fixtures):
+
+1. **WebGL portrait rendering.** Shared the SVG path/gradient data
+   (`src/scene/portraitArt.ts`), added a Canvas2D→WebGL texture painter
+   (`src/renderer/browser/portraitTexture.ts`) and format-aware box layout
+   (`src/renderer/portraitLayout.ts`, pure/tested). The digital-woman subject now
+   renders in the WebGL scene, not just the CSS fallback.
+2. **Real-DOM lifecycle test coverage.** Added `jsdom` and a new test file exercising
+   `createDefaultBrowserEnvironment()` — the real production path, previously
+   completely untested — through actual `document.hidden`/`visibilitychange`/
+   `webglcontextlost` events.
+3. **Accessibility/keyboard test coverage.** Added `@testing-library/react` +
+   `SceneFallback.test.tsx` covering real button focusability, non-dangling
+   `aria-labelledby`, decorative-layer `aria-hidden`, and reduced-motion toggling.
+4. **Demoed portrait/square formats live**, surfacing a real bug: both scene
+   components hardcoded `id="scene-title"`, which would produce duplicate DOM ids
+   the moment more than one scene mounted on a page. Fixed via React's `useId()`.
+5. **Minimal config-round-trip builder.** `src/components/SceneBuilder.tsx` +
+   `src/scene/roundTrip.ts` (`exportSceneConfig`/`importSceneConfig`, now public
+   exports). Live-verified the actual round-trip in a real browser: export while in
+   one format, switch away, paste the export back in, exact string match restored.
+
+**Final hardening pass:**
+- Added an asset-failure test: `SceneWebgl` renders without throwing or logging
+  console errors when WebGL is unavailable (`canvas.getContext` returns `null`).
+- Wrote `README.md`: real public API documentation, including an explicit statement
+  that the rendering components are demo-only, not yet exported publicly.
+- Ran a genuine clean-install verification (`rm -rf node_modules` for both the root
+  and the Next.js fixture workspace member, then `pnpm install --frozen-lockfile`) —
+  the full validation suite passed from that fresh install.
+- Reconciled `ACCEPTANCE_CRITERIA.md`'s release gates against verified reality.
+
+Test suite grew from 7 files/19 tests to 12 files/40 tests across this branch.
+Library artifact grew from 2.26 kB to 2.69 kB (the round-trip functions are a real,
+intended public API addition, not a leak). PR opened at
+https://github.com/reshimu/matrix-women/pull/1, not yet merged.
+
 ## 2026-07-27 — Digital-woman subject: real illustration
 
 - Added `src/components/SubjectPortrait.tsx`: a real hand-authored SVG illustration,

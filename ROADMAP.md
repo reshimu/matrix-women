@@ -6,8 +6,8 @@
 | M1 | Establish package boundaries, renderer-independent scene schema, and Vite builder baseline | Complete — separate library artifact and consumer fixture validated |
 | M2 | Implement core scene composition and dependable non-WebGL fallback | Complete — CSS fallback lifecycle host and config-driven scene composition (layers + effects + format) implemented and tested; validated 2026-07-27. |
 | M3 | Add progressive WebGL enhancement, lifecycle management, and constrained-device behavior | In progress — renderer lifecycle contract, end-to-end wiring, an animated shader now driven by `scene.layers`/`scene.effects` (mirroring `selectActiveLayers`), and a real-Chrome spot-check are all done. No visual parity with the CSS scene attempted; constrained-device behavior not re-evaluated beyond `selectRenderer`. |
-| M4 | Build responsive builder, configuration round-trip, and documented public API | Pending — Next.js consumption proof (a spec requirement, previously an open gap) completed 2026-07-27 ahead of the rest of M4; see entry below. |
-| M5 | Complete automated/browser/visual/accessibility/performance validation and release audit | Pending |
+| M4 | Build responsive builder, configuration round-trip, and documented public API | In progress — Next.js consumption proof done; a minimal config-round-trip builder (`SceneBuilder.tsx`) done and live-verified; public API documented (`README.md`). A full *responsive* visual builder (drag/drop layer editing, multi-scene management) is explicitly out of scope for this minimum and remains open. |
+| M5 | Complete automated/browser/visual/accessibility/performance validation and release audit | In progress — real-DOM lifecycle tests, accessibility/keyboard tests, and an asset-failure test added this session; clean-install verified. Formal performance budget and a consolidated risk audit document remain open. |
 
 No downstream milestone starts until M0 has a recorded runnable baseline or an explicit decision authorizes a greenfield start.
 
@@ -208,3 +208,59 @@ renders byte-identical markup to the verified rasterized preview by extracting t
 live DOM's actual `.scene__subject svg` output via the dev server (temporarily forcing
 the CSS-fallback branch, then reverting — same pattern used for prior renderer-branch
 checks this session).
+
+## Hardening branch (`webgl-portrait-texture`, PR #1) — 2026-07-27
+
+A follow-up session picked up "make her show up in the WebGL scene too, then keep
+hardening toward production-ready." Five slices landed on this branch, each validated
+(`typecheck`/`lint`/`test`/`build`/consumer fixtures) before the next started:
+
+1. **WebGL portrait rendering.** Extracted the SVG path/gradient data into
+   `src/scene/portraitArt.ts` (single source of truth), added
+   `src/renderer/browser/portraitTexture.ts` (repaints the same paths onto an
+   offscreen Canvas2D context, uploads as a WebGL texture) and
+   `src/renderer/portraitLayout.ts` (`computePortraitBox`, pure/tested — contain-fits
+   the portrait within a format-specific region mirroring the CSS scene's anchor
+   behavior). Wired into `SceneWebgl`'s fragment shader as a `uPortraitBox` uniform.
+   She now renders in both the CSS and WebGL paths from the same artwork.
+2. **Real-DOM lifecycle test coverage.** Added `jsdom` + a new test file exercising
+   `createDefaultBrowserEnvironment()` — the actual production code path — through
+   real `document.hidden`/`visibilitychange`/`webglcontextlost` events, not just the
+   injected fake environment. Closes a gap flagged repeatedly across prior sessions.
+3. **Accessibility/keyboard test coverage.** Added `@testing-library/react` +
+   `SceneFallback.test.tsx`: real focusable `<button>`, non-dangling
+   `aria-labelledby`, decorative-layer `aria-hidden`, reduced-motion class toggling.
+4. **Demoed portrait/square formats live**, and in doing so **found and fixed a real
+   accessibility bug**: both scene components hardcoded `id="scene-title"` —
+   mounting more than one scene on a page produced duplicate DOM ids and an
+   ambiguous `aria-labelledby`. Fixed via React's `useId()`.
+5. **Minimal config-round-trip builder** (`src/components/SceneBuilder.tsx` +
+   `src/scene/roundTrip.ts`, `exportSceneConfig`/`importSceneConfig` — exported
+   publicly). Live-verified the actual round-trip: export while in one format,
+   switch away, paste the export back in, exact string match restored plus the live
+   preview updating. Also verified the error path (malformed JSON → validation
+   issue, no throw).
+
+**Final hardening pass** closing out this branch:
+
+- Added an asset-failure test (`SceneWebgl.test.tsx`): renders without throwing and
+  without console errors when `canvas.getContext` returns `null` (WebGL
+  unavailable), and disposes cleanly on unmount in that state.
+- Wrote real API documentation (`README.md`) — public exports, `SceneConfig` shape,
+  and an explicit, honest statement that the rendering components themselves are
+  demo-only and not yet part of the public package (an open product decision, not
+  silently implied as shipped).
+- Ran a genuine clean-install verification: `rm -rf node_modules` (root + the
+  Next.js fixture workspace member), `pnpm install --frozen-lockfile`, then the full
+  validation suite (`typecheck`/`lint`/`test`/`build`/`test:consumer`/
+  `test:nextjs-consumer`) — all passed from the fresh install.
+- Reconciled `ACCEPTANCE_CRITERIA.md`'s release gates against actual verified state
+  (most gates now checked; the two still open — a consolidated risk/performance
+  audit doc, and full *responsive* builder scope beyond this round-trip minimum —
+  are named explicitly, not glossed over).
+
+Final count on this branch: test suite grew from 7 files/19 tests to **12 files/40
+tests**. Two real bugs were caught and fixed during this hardening work (not
+pre-existing, found *by* the hardening): the WebGL canvas resize listener bug (prior
+session) and the duplicate-id accessibility bug (this session, item 4 above) — both
+are the kind of thing "harden until production-ready" is supposed to surface.

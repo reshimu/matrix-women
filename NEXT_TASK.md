@@ -1,34 +1,33 @@
 # Next atomic task
 
-The digital-woman subject now has a real hand-authored SVG illustration
-(`src/components/SubjectPortrait.tsx`) instead of placeholder CSS blob shapes —
-faceless/symbolic, dignified, ethereal, matching `AGENTS.md`'s visual requirements.
-M3's WebGL path and the Next.js consumption proof were completed just before this.
-Full evidence in `PROJECT_STATE.md`/`ROADMAP.md`.
+The `webgl-portrait-texture` branch (PR #1) closed five slices: WebGL portrait
+rendering, real-DOM lifecycle test coverage, accessibility/keyboard tests, live
+portrait/square format demos (plus a real duplicate-id bug fix), and a minimal
+config-round-trip builder — followed by a final hardening pass (asset-failure test,
+`README.md`, clean-install verification, release-gate reconciliation). Full evidence
+in `PROJECT_STATE.md`/`ROADMAP.md`. Test suite: 12 files / 40 tests.
 
-## Proposed next steps (not started, needs direction)
+## Immediate next step
 
-1. **Iterate further on the illustration.** The current design is a first pass,
-   verified to look coherent (not the earlier "snowman" failure) but not extensively
-   refined — proportions, hair detail, halo styling, and the `portrait`/`square`
-   format crops could all use another look now that the base shape works.
-2. **Bring the WebGL scene to visual parity.** `SceneWebgl` still renders an abstract
-   gradient/glow/sparkle, nothing like this new illustrated figure. Could port the
-   silhouette as an SVG texture, or design a from-scratch WebGL equivalent.
-3. **Demo the other scene formats live.** `portrait`/`square` are proven correct via
-   computed-style checks but nobody has seen the new illustration inside those crops
-   in the running demo — only `hero` is ever mounted in `main.tsx`.
-4. **Start M4 (responsive builder + config round-trip + documented public API).**
+**Review and merge PR #1** (https://github.com/reshimu/matrix-women/pull/1) — not
+done automatically; merging main-branch history is a decision for you, not something
+to do unilaterally.
 
-## Known tooling limitation (worth fixing before more visual work)
+## Proposed next steps after merge (not started, needs direction)
 
-This session's screenshot tools were unusable: the sandboxed browser pane doesn't
-composite frames, and Claude in Chrome's automated tab has a genuine `0×0` viewport
-(confirmed — `resize_window` failed with "bounds must be at least 50% within visible
-screen space"). The workaround (rasterize SVG via `npx resvg-cli`, read the PNG) only
-works for static SVG content — it can't verify animation, WebGL canvas output, or
-real interaction. If more visual/WebGL work is planned, worth checking whether a
-properly-visible browser window is available another way before relying on
-screenshots again.
+1. **Visual parity pass.** Bring the WebGL scene's look closer to the CSS scene
+   (matrix-rain-like motion, portrait/lighting cues) instead of the current abstract
+   gradient/glow/sparkle plus portrait texture.
+2. **Decide on public component exports.** Right now `@matrix-ai/ui` ships only
+   config/validation/selection primitives — the actual rendering components are
+   demo-only. Decide whether/how to export `Scene`/`SceneFallback`/`SceneWebgl`
+   publicly (this affects bundling of CSS, the WebGL shader/texture code, and API
+   surface design — worth a deliberate decision, not a quick add).
+3. **Full M4 responsive builder scope.** The round-trip minimum is done; a real
+   drag/drop, multi-scene-management builder is a substantially larger effort.
+4. **Consolidated risk/performance audit.** Evidence exists piecemeal across
+   `PROJECT_STATE.md`/`RISKS.md`; synthesizing it into one document would close the
+   last open release gate.
 
-**Current blocker:** none technical — next step is a direction choice.
+**Current blocker:** none technical — the branch is validated and ready; next step
+is either merging it or picking a direction from the above.
