@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { DemoFormats } from './components/DemoFormats'
 import './styles.css'
+import './demo.css'
 
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 

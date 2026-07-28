@@ -442,9 +442,37 @@ are a real, intended public API addition). Full evidence and per-slice detail in
 - Validated: ran the full CI sequence locally end-to-end — all pass, 13 files/43
   tests unchanged.
 
+## Evidence as of 2026-07-28 (full M4 responsive builder scope, resolves R-009)
+
+- Added `src/components/builderState.ts`: pure, unit-tested layer/scene helpers
+  (`createLayer`/`removeLayer`/`moveLayer`/`reorderLayers`/`createScene`/
+  `duplicateScene`) plus `localStorage`-backed `loadBuilderState`/`saveBuilderState`
+  (guarded for SSR, validates every stored scene through `validateScene` so
+  corrupted data can't crash the builder). 18 new unit tests.
+- Rewrote `SceneBuilder.tsx`: multi-scene management (new/switch/duplicate/delete,
+  persisted across reloads), Title/Eyebrow text fields (previously only editable via
+  raw JSON import), and a generic per-layer editor — any layer type can be added,
+  removed, and reordered via native drag-and-drop or keyboard-accessible ↑/↓
+  buttons (drag alone isn't keyboard-operable; `AGENTS.md` requires keyboard access).
+- Added 9 `SceneBuilder.test.tsx` tests covering all of the above plus confirming the
+  existing export→import round-trip still works with the new generic layer model.
+- **Real bug found and fixed during verification:** `src/react.ts` imports the whole
+  `styles.css`, and CSS isn't tree-shaken — `.builder`/`.demo-format` rules (dev-tool
+  only, never exported) were bundled into the *public* `react.css`. Caught by
+  watching its size grow to 12.98 kB. Fixed by splitting into `src/styles.css`
+  (public) and a new `src/demo.css` (demo-only, imported only by `src/main.tsx`) —
+  `react.css` dropped to **10.08 kB**, smaller than before this slice even started.
+- Live-verified in a real browser: add/remove/move/drag-and-drop reordering,
+  full multi-scene lifecycle, and `localStorage` persistence surviving an actual
+  page reload. Confirmed no horizontal overflow and correct responsive collapsing
+  at 320px width.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15 files/70 tests, up from
+  13/43), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
+  `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass.
+
 ## Exact next task
 
-No forced next task. All Medium-or-higher risks in `RISK_PERFORMANCE_AUDIT.md` are
-now resolved. Remaining open items are Low/Informational: full M4
-responsive-builder scope, visual regression tooling, and whether to publish to npm
-(see `NEXT_TASK.md`).
+No forced next task. Every risk in `RISK_PERFORMANCE_AUDIT.md`'s register is now
+either resolved or an explicitly-accepted Low/Informational item. Remaining open
+items are optional: visual regression tooling, and whether to publish to npm (see
+`NEXT_TASK.md`).

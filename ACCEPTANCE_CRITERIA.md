@@ -95,6 +95,29 @@
       impossibly low budget, confirmed `[FAIL]` output and a non-zero exit code, then
       discarded the patched copy — not just trusted that it would work.
 
+## Full M4 responsive builder scope (2026-07-28) — resolves audit R-009
+
+- [x] Multi-scene management: new/switch/duplicate/delete, persisted to
+      `localStorage` across reloads (`src/components/builderState.ts`,
+      `SceneBuilder.tsx`).
+- [x] Generic layer add/remove/reorder for any layer type — native HTML5 drag-and-drop
+      plus keyboard-accessible ↑/↓ move buttons (drag alone isn't keyboard-operable,
+      and `AGENTS.md` requires keyboard access).
+- [x] Title/Eyebrow text fields added (previously only editable via raw JSON import).
+- [x] 27 new tests (18 pure-logic + 9 component-level) covering layer management,
+      multi-scene isolation/persistence, and confirming the export→import round-trip
+      still works with the new generic layer model.
+- [x] Real bug found and fixed during verification: the public `react.css` was
+      accidentally shipping demo-only builder styles (CSS isn't tree-shaken) —
+      split into `src/styles.css` (public) and `src/demo.css` (demo-only), shrinking
+      `react.css` from a bloated 12.98 kB to 10.08 kB.
+- [x] Live-verified in a real browser: drag-and-drop reordering, full multi-scene
+      lifecycle, persistence across an actual reload, and correct responsive
+      collapsing with no horizontal overflow at 320px.
+
+**Every item in `RISK_PERFORMANCE_AUDIT.md`'s risk register (R-001–R-009) is now
+resolved or an explicitly-accepted Low/Informational item.**
+
 ## WebGL/CSS visual parity (2026-07-27)
 
 - [x] WebGL scene's background gradient, aura/glow position, and code-rain effect now

@@ -143,14 +143,25 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   can actually fail (temporarily patched a copy with an impossibly low budget,
   confirmed non-zero exit), not just always pass. This resolves audit R-005.
 
+- **(2026-07-28, full M4 responsive builder scope)** Added
+  `src/components/builderState.ts` (pure, unit-tested layer/scene helpers +
+  `localStorage`-backed state, 18 tests) and rewrote `SceneBuilder.tsx`: multi-scene
+  management (new/switch/duplicate/delete, persisted across reloads) and generic
+  layer add/remove/reorder (drag-and-drop plus keyboard-accessible ↑/↓ buttons).
+  9 new `SceneBuilder.test.tsx` tests. **Real bug found and fixed:** `react.css` was
+  accidentally shipping demo-only builder styles (CSS isn't tree-shaken) — split
+  into `src/styles.css` (public) and `src/demo.css` (demo-only), shrinking
+  `react.css` to 10.08 kB (smaller than before this slice started). Live-verified
+  drag-and-drop, full scene lifecycle, and persistence across an actual reload;
+  confirmed no horizontal overflow at 320px. This resolves audit R-009.
+
 ## Exact next task
 
-All release gates are checked, and both R-005 and R-006 are resolved — every
-Medium-or-higher risk in `RISK_PERFORMANCE_AUDIT.md` is now resolved. No forced next
-task — see `NEXT_TASK.md` for candidate next steps (full M4 responsive-builder scope,
-visual regression tooling, or considering an npm publish now that there's a real,
-documented, CI-validated public API). Update all project records and this restart
-pack with factual validation evidence when done.
+Every item in `RISK_PERFORMANCE_AUDIT.md`'s risk register (R-001–R-009) is now either
+resolved or an explicitly-accepted Low/Informational item. No forced next task — see
+`NEXT_TASK.md` for optional next steps (visual regression tooling, or considering an
+npm publish). Update all project records and this restart pack with factual
+validation evidence when done.
 
 ## Non-negotiables
 
@@ -169,7 +180,9 @@ pack with factual validation evidence when done.
 entries across sessions (the exact staleness problem `RISK_PERFORMANCE_AUDIT.md` now
 exists to prevent). Current, verified risks only; see
 [`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md) §4 for the full register with
-severities and mitigations (R-001–R-009).
+severities and mitigations. As of 2026-07-28, every item (R-001–R-009) is resolved or
+an explicitly-accepted Low/Informational item — nothing above Low severity remains
+open.
 
 - **This session's screenshot tooling is fundamentally broken**: the sandboxed
   browser pane doesn't composite frames, and Claude in Chrome's automated tab has a

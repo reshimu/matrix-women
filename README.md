@@ -142,5 +142,6 @@ both workspace members.
 - `src/scene/` — public, browser-free: types, defaults, validation, layer selection, JSON round-trip.
 - `src/renderer/` — `selectRenderer` (public, pure) plus WebGL-specific pure helpers (`deriveWebglUniforms`, `computePortraitBox`).
 - `src/renderer/browser/` — browser-only renderer lifecycle hosts (CSS + WebGL) and the portrait Canvas2D→WebGL texture painter; internal implementation detail of the `@matrix-ai/ui/react` components, not exported directly.
-- `src/components/` — `Scene.tsx`, `SceneFallback.tsx`, `SceneWebgl.tsx`, `SubjectPortrait.tsx` are exported publicly via `@matrix-ai/ui/react`; `SceneBuilder.tsx` and `DemoFormats.tsx` are this repo's own dev tooling and stay internal.
+- `src/components/` — `Scene.tsx`, `SceneFallback.tsx`, `SceneWebgl.tsx`, `SubjectPortrait.tsx` are exported publicly via `@matrix-ai/ui/react`; `SceneBuilder.tsx`, `builderState.ts`, and `DemoFormats.tsx` are this repo's own dev tooling and stay internal.
+- `src/styles.css` — public design-system styles, imported by `@matrix-ai/ui/react`. `src/demo.css` — demo-only builder/gallery chrome, imported only by this repo's own `src/main.tsx`; kept separate so it never ships in the public `react.css` (a real bug this repo hit once — see `ROADMAP.md`).
 - `fixtures/` — consumption proofs: a plain-Node script for each entry, and a real Next.js app exercising both.
