@@ -134,14 +134,23 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   `'use client'` directive placed in individual component files gets silently
   stripped by Rollup once bundled — only the one at the top of the entry file
   (`src/react.ts`) survives. This resolves audit R-006.
+- **(2026-07-28, CI + bundle-size performance budget)** No CI existed for this repo
+  at all before this. Added `.github/workflows/ci.yml` (runs on every push/PR:
+  typecheck → lint → test → build → all three consumer fixtures → bundle-size check)
+  and `scripts/check-bundle-size.mjs` (`pnpm check:bundle-size`, no new dependency).
+  Budgets: `index.js` 5 kB (current 2.28 kB), `react.js` 30 kB (current 20.19 kB),
+  `react.css` 20 kB (current 11.56 kB), shared chunks 2 kB each. Verified the check
+  can actually fail (temporarily patched a copy with an impossibly low budget,
+  confirmed non-zero exit), not just always pass. This resolves audit R-005.
 
 ## Exact next task
 
-All release gates are checked, and R-006 is resolved. No forced next task — see
-`NEXT_TASK.md` for candidate next steps (a CI performance budget, full M4
-responsive-builder scope, visual regression tooling, or considering an npm publish
-now that there's a real documented public API). Update all project records and this
-restart pack with factual validation evidence when done.
+All release gates are checked, and both R-005 and R-006 are resolved — every
+Medium-or-higher risk in `RISK_PERFORMANCE_AUDIT.md` is now resolved. No forced next
+task — see `NEXT_TASK.md` for candidate next steps (full M4 responsive-builder scope,
+visual regression tooling, or considering an npm publish now that there's a real,
+documented, CI-validated public API). Update all project records and this restart
+pack with factual validation evidence when done.
 
 ## Non-negotiables
 

@@ -28,6 +28,7 @@
     "test:consumer": "pnpm build:library && node fixtures/library-consumer.mjs",
     "test:react-consumer": "pnpm build:library && node fixtures/react-consumer.mjs",
     "test:nextjs-consumer": "pnpm build:library && pnpm --filter matrix-ai-ui-nextjs-consumer build",
+    "check:bundle-size": "pnpm build:library && node scripts/check-bundle-size.mjs",
     "typecheck": "tsc -b --pretty false",
     "test": "vitest run",
     "lint": "eslint . --max-warnings=0"

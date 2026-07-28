@@ -1,10 +1,11 @@
 # Risk & performance audit
 
-**Date:** 2026-07-28 (initial); **updated same day** after the rendering components
-were exported publicly (`@matrix-ai/ui/react`, ADR-0004) — §2.1 and the executive
-summary below were revised to match; the rest of the document's findings (risk
-register, test coverage, release-gate verdict) still hold and weren't invalidated by
-that change.
+**Date:** 2026-07-28 (initial); **updated same day, twice** — once after the
+rendering components were exported publicly (`@matrix-ai/ui/react`, ADR-0004; §2.1
+and the executive summary revised to match), and again after CI plus a bundle-size
+budget were added (`.github/workflows/ci.yml`, `scripts/check-bundle-size.mjs`; R-005
+resolved). The rest of the document's findings (risk register, test coverage,
+release-gate verdict) still hold and weren't invalidated by either change.
 **Scope:** Consolidates risk and performance evidence that was previously scattered
 across `PROJECT_STATE.md`, `RISKS.md`, and `ACCEPTANCE_CRITERIA.md` into one document,
 per the last open item on `ACCEPTANCE_CRITERIA.md`'s release gates. Every number below
@@ -32,7 +33,9 @@ accepted and named, not silently unaddressed.
 **Verdict: the published library is production-ready for its stated scope** —
 config/validation/selection primitives, and now a working, tested, publicly-exported
 reference rendering layer for both Vite and Next.js (App Router `'use client'`
-boundary verified against a real `next build`). Remaining open items (§4, §5) are
+boundary verified against a real `next build`), with CI (`.github/workflows/ci.yml`)
+now enforcing the full validation suite and a bundle-size budget on every push/PR —
+previously nothing ran automatically at all. Remaining open items (§4, §5) are
 scoped product decisions (a CI performance budget, full M4 builder scope, visual
 regression tooling), not defects in what ships today.
 
@@ -156,7 +159,7 @@ never removed; reconciled here against actual current code, not just copied).
 | R-002 | Low | Greenfield scaffolding could contradict an unprovided visual system/assets. | Resolved | A real, hand-authored, dignified/symbolic illustration now exists (`SubjectPortrait.tsx`, `portraitArt.ts`) and renders in both the CSS and WebGL paths. |
 | R-003 | Low | External or unlicensed artwork could violate the asset-provenance directive. | Resolved | All visual assets are inline, hand-authored SVG paths/gradients — no external image service, no unlicensed artwork, in either renderer. |
 | R-004 | Medium | Particle layer renders one DOM node per particle (up to 200). | Open, low-likelihood | See §2.4. Validation-capped, not unbounded; no shipped config approaches the ceiling. |
-| R-005 | Medium | No CI-enforced performance budget (bundle size, etc.). | Open | Recommended next step (§5); not yet implemented. |
+| R-005 | Medium | No CI-enforced performance budget (bundle size, etc.). | **Resolved 2026-07-28** | `.github/workflows/ci.yml` (previously no CI existed at all) runs the full validation suite on every push/PR, ending with `pnpm check:bundle-size` (`scripts/check-bundle-size.mjs`), which fails the build if `index.js`/`react.js`/`react.css`/any shared chunk regresses past a defined threshold. Verified the check-script actually fails correctly, not just passes silently, by temporarily lowering a budget and confirming a non-zero exit. |
 | R-006 | Low | The public package doesn't export the rendering components — only config/validation/selection. | **Resolved 2026-07-28** | `Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait` now exported via a separate `@matrix-ai/ui/react` entry (ADR-0004), with a matching `@matrix-ai/ui/react.css`, a `'use client'` boundary verified against a real `next build`, and a new consumer fixture (`fixtures/react-consumer.mjs`). The `.` entry is unaffected — still zero DOM/CSS dependencies. |
 | R-007 | Low | No real-browser continuous-animation/resize test automation exists. | Open, environment-constrained | Every tool available across this project's sessions has a dead-`rAF`/non-compositing limitation; worked around via static verification and manual real-browser checks (see §3). Not closeable without a different test environment (e.g., real Playwright/Puppeteer with an actual display). |
 | R-008 | Low | WebGL's visual vocabulary (procedural gradient/rain/glow) is an approximation of the CSS scene, not pixel-identical. | Accepted | Intentional scope decision from the visual-parity pass — matches position/color/behavior, not a literal recreation of CSS's falling-text columns. |
@@ -166,10 +169,7 @@ never removed; reconciled here against actual current code, not just copied).
 
 ## 5. Recommended next steps (not started — this document is an audit, not new work)
 
-1. **CI performance budget.** Add a size-limit check (e.g., `size-limit` or a simple
-   `stat`-based script in CI) that fails the build if `dist/lib/index.js` or
-   `dist/lib/react.js` regresses past a threshold — currently nothing would catch an
-   accidental bloat regression automatically.
+1. ~~CI performance budget~~ — **done 2026-07-28**, see R-005.
 2. ~~Decide R-006 (public component exports)~~ — **done 2026-07-28**, see R-006.
 3. **Canvas-based particle rendering** if any real usage approaches the 200-particle
    validation ceiling on low-end/mobile hardware (R-004) — not needed at current
@@ -190,8 +190,10 @@ never removed; reconciled here against actual current code, not just copied).
 | Builder round-trips scene configuration | ✅ `SceneBuilder.tsx` + `exportSceneConfig`/`importSceneConfig`, round-trip-tested (`roundTrip.test.ts`) — minimal scope, not full M4 (R-009) |
 | Fallback, accessibility, performance evidence, risks, API documentation, clean-install results recorded | ✅ This document + `README.md` + a verified clean-install run (`rm -rf node_modules` + `pnpm install --frozen-lockfile` + full validation, recorded in `ROADMAP.md`) |
 | No unresolved critical or high-severity defect remains | ✅ Nothing in the risk register above is rated above Medium, and every Medium item has a named mitigation or is explicitly accepted |
+| CI enforces the full validation suite, including a bundle-size budget | ✅ `.github/workflows/ci.yml` (added 2026-07-28 — no CI existed before this) runs on every push/PR: typecheck, lint, test, build, all three consumer fixtures, then `pnpm check:bundle-size` |
 
 **This closes the last previously-open release gate** ("evidence recorded" for
-risks/performance). The remaining open items (R-004, R-005, R-006, R-007, R-009) are
-scoped, named, and not blocking for the library's current stated scope — they are
-inputs to *future* product decisions, not defects in what exists today.
+risks/performance) and both Medium-severity risks (R-005, R-006). The remaining open
+items (R-004, R-007, R-009) are Low/Informational, scoped, named, and not blocking
+for the library's current stated scope — they are inputs to *future* product
+decisions, not defects in what exists today.
