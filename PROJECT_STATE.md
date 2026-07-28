@@ -218,26 +218,27 @@ flagged above. Findings:
 
 ## Risks and blockers
 
-- Only a literal human-eyes-on-screen check remains unverified for the WebGL
-  animation/resize behavior — every other verification path available to automated
-  tooling in this session has been exhausted and passed. See earlier evidence.
-- The WebGL scene's visual vocabulary (glow/gradient/sparkle) doesn't visually
-  resemble the CSS scene (matrix rain, portrait silhouette) — intentionally deferred,
-  not attempted this slice.
-- Visual parity with the CSS scene (matrix rain, portrait/lighting look) is
-  intentionally not attempted yet — this was scoped as a "trivial" gradient.
-- The `Scene` → `SceneWebgl`/`SceneFallback` branch decision itself has no automated
-  test (no jsdom/browser-mode Vitest project exists) — verified only by manual
-  live-browser checks, which are repeatable but not automated. Consistent with the
-  existing accepted gap: no automated real-DOM test coverage anywhere in this repo yet
-  (see M5 scope).
-- Reduced-motion behavior is implemented in CSS and renderer selection, but automated
-  browser-emulation coverage does not exist; the lifecycle host's real
-  `browserEnvironment()` path (actual `window.document`/`IntersectionObserver`) has no
-  automated test — only the injected fake environment is exercised in
-  `cssRendererHost.test.ts`. Vitest runs in `environment: 'node'`.
-- Only one scene format (`hero`) renders meaningfully; `portrait` and `square` are
-  typed but produce no visually distinct output.
+**This section was stale as of 2026-07-28** — most of the bullets below had already
+been resolved by later work in this same file (visual parity pass, jsdom lifecycle
+coverage, `DemoFormats.tsx`) but were never removed. Reconciled during the
+risk/performance audit; see [`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md)
+for the current, verified risk register. Kept here (struck through in spirit, not
+deleted) as a record of what drifted and why: this is exactly the kind of tracker
+staleness `RESTART_PROMPT.md` already warns every session to check the code before
+trusting.
+
+- ~~Only a literal human-eyes-on-screen check remains unverified for WebGL
+  animation/resize~~ — still genuinely true (environment-constrained, not
+  code-related); see audit R-007.
+- ~~WebGL's visual vocabulary doesn't resemble the CSS scene~~ — **resolved** by the
+  WebGL visual parity pass (PR #2); see audit R-008 for the remaining honest caveat
+  (approximation, not pixel-identical).
+- ~~`Scene` branch decision has no automated test~~ — **resolved**, added during this
+  audit (`Scene.test.tsx`).
+- ~~`browserEnvironment()` has no automated test~~ — **resolved** by
+  `realBrowserEnvironment.test.ts` (jsdom), added in the hardening branch (PR #1).
+- ~~Only `hero` format renders meaningfully~~ — **resolved** by `DemoFormats.tsx`,
+  which mounts hero/portrait/square live in the actual running demo.
 
 ## Evidence as of 2026-07-27 (Next.js consumption proof, same day)
 

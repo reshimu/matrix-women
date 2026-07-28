@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-07-28 — Consolidated risk/performance audit
+
+- Added `RISK_PERFORMANCE_AUDIT.md`, consolidating risk and performance evidence that
+  had been scattered across `PROJECT_STATE.md`/`RISKS.md`/`ACCEPTANCE_CRITERIA.md` —
+  the last open item on the release-gate checklist.
+- Re-verified every number fresh: published library `2.69 kB` (1.13 kB gzip), demo
+  app `211.56 kB` JS / `11.55 kB` CSS (documented as not representative of a single
+  production scene — the demo mounts 4 scene instances at once).
+- Documented runtime performance characteristics (WebGL draw-call/shader cost, CSS
+  animation compositor-friendliness, lifecycle-host pause-on-hidden as a real
+  perf/battery win) and built a consolidated risk register (R-001–R-009).
+- Found and reconciled stale, already-resolved risk bullets in `PROJECT_STATE.md` and
+  `RESTART_PROMPT.md` (both had accumulated entries from earlier sessions that later
+  work resolved but never removed) — marked with strikethrough + resolution evidence
+  rather than silently deleted.
+- Found one bullet that looked resolved but genuinely wasn't: no automated test
+  existed for the `Scene` component's webgl-vs-css branch decision. Added
+  `Scene.test.tsx` (3 tests), which required building a proper minimal fake WebGL
+  context for jsdom rather than reusing the existing null-context trick.
+- Marked `ACCEPTANCE_CRITERIA.md`'s last open release gate as done.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (13 files/43 tests, up from
+  12/40), `pnpm build`, `pnpm test:consumer` all pass. Library artifact size
+  unchanged (2.69 kB).
+
 ## 2026-07-27 — WebGL visual parity pass (after PR #1 merged)
 
 - Rewrote `SceneWebgl`'s fragment shader to actually resemble the CSS scene:

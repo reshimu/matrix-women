@@ -13,7 +13,7 @@
 - [x] Typecheck and lint pass — reverified from a genuine clean install (`rm -rf
       node_modules && pnpm install --frozen-lockfile`), not just an incrementally
       warm environment. See "Final hardening pass" below.
-- [x] Unit tests pass (12 files / 40 tests): scene validation/composition/round-trip
+- [x] Unit tests pass (13 files / 43 tests): scene validation/composition/round-trip
       (pure, node env), renderer selection and WebGL uniform derivation (pure),
       lifecycle-host state transitions (both CSS and WebGL hosts, injected fake
       environment). Real-DOM/real-browser-environment coverage (jsdom): the actual
@@ -45,10 +45,14 @@
 - [x] API documentation recorded — see `README.md`, including an explicit, honest
       statement of what is *not* yet in the public package (the rendering components
       are demo-only, not exported).
-- [ ] Fallback/performance evidence and a full risk audit are recorded piecemeal
-      across `PROJECT_STATE.md`/`RISKS.md` but not yet consolidated into one
-      dedicated document — reasonable for the project's current size, worth doing
-      before an actual publish/release.
+- [x] Fallback/performance evidence and a full risk audit are now consolidated in
+      [`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md) — real, freshly-verified
+      bundle sizes (published library 2.69 kB / demo 211.56 kB JS), a runtime
+      performance characteristics section, a consolidated risk register (superseding
+      the piecemeal bullets previously scattered across `PROJECT_STATE.md`/`RISKS.md`
+      — several of which were found stale/already-resolved during this reconciliation
+      and are called out as such, not silently repeated), and this release-gate
+      table cross-checked against it.
 - [x] No unresolved critical or high-severity defect is known. Two real bugs were
       found and fixed *during* this session's hardening work (see `ROADMAP.md`): a
       stale WebGL canvas resize listener, and a duplicate-DOM-id accessibility bug

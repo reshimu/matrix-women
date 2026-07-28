@@ -317,3 +317,40 @@ future session doesn't re-debug the same false lead.
 Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (12 files/40 tests, unchanged —
 this is shader/JS wiring, not new testable pure logic), `pnpm build`,
 `pnpm test:consumer`. Library artifact size unchanged (2.69 kB).
+
+## Risk/performance audit (2026-07-28)
+
+Added [`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md), consolidating what had
+been scattered across `PROJECT_STATE.md`/`RISKS.md`/`ACCEPTANCE_CRITERIA.md` into one
+document — this was the last open item on the release-gate checklist.
+
+- Re-verified every number fresh rather than carrying over old claims: published
+  library `2.69 kB` (1.13 kB gzip), demo app `211.56 kB` JS / `11.55 kB` CSS. Documented
+  explicitly that the demo number isn't representative of a single production scene
+  (it mounts hero/portrait/square + the builder simultaneously for inspection).
+- Wrote a runtime performance characteristics section: single fullscreen-triangle
+  WebGL draw call with O(1) per-pixel shader cost, compositor-friendly CSS animations,
+  lifecycle hosts that actually pause on hidden/offscreen (a real perf/battery
+  positive, already unit- and jsdom-tested), zero network-fetched assets in either
+  renderer.
+- Built a consolidated risk register (R-001 through R-009) by re-verifying each
+  scattered risk bullet against current code rather than copying it forward. Found
+  that `PROJECT_STATE.md`'s "Risks and blockers" section and `RESTART_PROMPT.md`'s
+  "Known risks" section had both accumulated **stale, already-resolved entries**
+  (visual parity, jsdom lifecycle coverage, `DemoFormats.tsx` all resolved earlier
+  bullets that were never removed) — reconciled both in place with strikethrough
+  notes explaining what resolved them and when, rather than silently deleting the
+  history.
+- Found one bullet that looked resolved but wasn't: "the `Scene` branch decision has
+  no automated test." Verified by checking for a `Scene.test.tsx` — none existed.
+  Added one (3 tests: mounts `SceneWebgl` when WebGL available + motion not reduced,
+  mounts `SceneFallback` when WebGL unavailable, mounts `SceneFallback` when reduced
+  motion requested even with WebGL available), which required building a proper
+  minimal fake WebGL context object for jsdom (a bare `{}` throws — `createShader`
+  etc. don't exist on it) rather than reusing the null-context trick the existing
+  asset-failure test used.
+- Marked `ACCEPTANCE_CRITERIA.md`'s last open release gate (consolidated risk/
+  performance evidence) as done, pointing at the new document.
+
+Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (13 files/43 tests, up from
+12/40), `pnpm build`, `pnpm test:consumer`. Library artifact size unchanged (2.69 kB).
