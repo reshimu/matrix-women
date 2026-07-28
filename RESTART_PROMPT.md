@@ -17,7 +17,7 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   also done.
 - Demo: Vite 8 + React 19 + TypeScript 5.9 + Tailwind 4. `src/main.tsx` renders the responsive CSS fallback in `src/components/SceneFallback.tsx`.
 - Library: `src/index.ts` exports browser-free scene defaults/types/validation, renderer selection, and `selectActiveLayers`. `vite.library.config.ts` emits `dist/lib/index.js`; `tsconfig.lib.json` emits declarations.
-- Consumer proof: `fixtures/library-consumer.mjs` imports `@matrix-ai/ui` after `pnpm build:library`.
+- Consumer proof: `fixtures/library-consumer.mjs` imports `@reshimu/matrix-ai-ui` after `pnpm build:library`.
 - Browser-only CSS renderer lifecycle host exists at
   `src/renderer/browser/cssRendererHost.ts` — `start`/`pause`/`resume`/`dispose`,
   driven by `visibilitychange` and `IntersectionObserver`, with injectable environment
@@ -68,7 +68,7 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   (mutating a ref during render) and fixed it via `useMemo` + effect.
 - **(2026-07-27, Next.js consumption proof)** Added `pnpm-workspace.yaml` and
   `fixtures/nextjs-consumer/` — a real Next.js 15 app, its own pnpm workspace member,
-  depending on `@matrix-ai/ui` via `workspace:*` (confirmed resolved as a real
+  depending on `@reshimu/matrix-ai-ui` via `workspace:*` (confirmed resolved as a real
   symlink). `app/page.tsx` is a Server Component (no `'use client'`) importing
   `defaultScene`/`validateScene`/`selectRenderer`/`selectActiveLayers` directly.
   `next build` statically prerendered the page; `next dev` live-verified in a real
@@ -121,9 +121,9 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   webgl-vs-css branch decision (13 files/43 tests now, up from 12/40).
 
 - **(2026-07-28, rendering components exported publicly)** Added `src/react.ts`, a
-  **second, separate** library entry (`@matrix-ai/ui/react`, not merged into the main
+  **second, separate** library entry (`@reshimu/matrix-ai-ui/react`, not merged into the main
   `.` entry — ADR-0004), exporting `Scene`/`SceneFallback`/`SceneWebgl`/
-  `SubjectPortrait` plus a `@matrix-ai/ui/react.css` the consumer imports explicitly.
+  `SubjectPortrait` plus a `@reshimu/matrix-ai-ui/react.css` the consumer imports explicitly.
   `'use client'` boundary verified against a real `next build`
   (`fixtures/nextjs-consumer/app/react/page.tsx`, live-checked in a real browser: real
   styling applied, no console errors); a new `fixtures/react-consumer.mjs` proves it
@@ -176,8 +176,8 @@ project records and this restart pack with factual validation evidence when done
 ## Non-negotiables
 
 - React + TypeScript; Tailwind; Vite demo.
-- The main `@matrix-ai/ui` entry remains renderer-independent and browser-free — the
-  `@matrix-ai/ui/react` entry (rendering components) is deliberately the opt-in,
+- The main `@reshimu/matrix-ai-ui` entry remains renderer-independent and browser-free — the
+  `@reshimu/matrix-ai-ui/react` entry (rendering components) is deliberately the opt-in,
   browser-only counterpart (ADR-0004), not an exception to this rule.
 - WebGL is enhancement only; CSS/Canvas/SVG fallback is mandatory.
 - Support 320px, reduced motion, keyboard access, lifecycle cleanup, hidden-document/offscreen pausing.
@@ -203,7 +203,7 @@ open.
   a properly visible browser window is available another way before relying on
   screenshots for future visual work. (audit R-007)
 - The rendering components (`Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait`)
-  are demo-only — not exported from `@matrix-ai/ui`. Documented explicitly in
+  are demo-only — not exported from `@reshimu/matrix-ai-ui`. Documented explicitly in
   `README.md` rather than left implicit; a pending product decision, not a defect.
   (audit R-006)
 - WebGL/CSS visual parity is close but not pixel-identical — the rain effect is a

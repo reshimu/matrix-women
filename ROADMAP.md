@@ -541,3 +541,15 @@ been the wrong call, but publishing *as-is* would have shipped something broken:
   that the exact package name is unclaimed (404) — but whether Shimon can publish
   *under the `@matrix-ai` scope specifically* depends on whether he owns that npm
   org/username, which isn't something this session can determine or decide.
+
+## 2026-07-28 — Renamed to `@reshimu/matrix-ai-ui`
+
+Asked Shimon which npm scope/account to publish under (own `@matrix-ai` vs. rename
+vs. unscoped). His answer: rename to `@reshimu/matrix-ai-ui`, matching this repo's
+GitHub org. Renamed `package.json` and every functional consumer/fixture, README,
+DECISIONS.md, ACCEPTANCE_CRITERIA.md, RISK_PERFORMANCE_AUDIT.md, and the evergreen
+sections of RESTART_PROMPT.md. Regenerated the lockfile via `pnpm install` and
+re-ran full validation — all green. Historical dated entries above (and in
+CHANGELOG.md/STATE.md) referencing the old `@matrix-ai/ui` name are left as-is:
+accurate record of what was true when written. Only remaining publish blocker is
+Shimon running `npm login` himself — see `NEXT_TASK.md`.

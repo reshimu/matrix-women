@@ -1,4 +1,4 @@
-import { defaultScene, selectRenderer, validateScene } from '@matrix-ai/ui'
+import { defaultScene, selectRenderer, validateScene } from '@reshimu/matrix-ai-ui'
 
 const result = validateScene(defaultScene)
 if (!result.ok) throw new Error(result.issues.join(' '))

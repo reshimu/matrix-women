@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-28 — Renamed package to `@reshimu/matrix-ai-ui`
+
+- Shimon's answer to the npm-scope question below: rename rather than try to claim
+  the `@matrix-ai` org. New name matches this repo's GitHub org (`reshimu`).
+- Updated `package.json`'s `name` field, both entry points' consumers
+  (`fixtures/library-consumer.mjs`, `fixtures/react-consumer.mjs`,
+  `fixtures/nextjs-consumer/**`), `README.md`, `DECISIONS.md`,
+  `ACCEPTANCE_CRITERIA.md`, `RISK_PERFORMANCE_AUDIT.md`, and the evergreen
+  (non-dated) sections of `RESTART_PROMPT.md`.
+- Deliberately left dated historical entries in this file, `ROADMAP.md`, and
+  `STATE.md` referencing the old `@matrix-ai/ui` name untouched — they're an
+  accurate record of what was true at the time, not stale references to fix.
+- Re-ran `pnpm install` to regenerate the lockfile/workspace symlink under the new
+  name, then the full validation suite.
+
 ## 2026-07-28 — npm publish prep: two real packaging bugs found and fixed
 
 - Moved `react`, `react-dom`, `vite`, `@vitejs/plugin-react`, `tailwindcss` from

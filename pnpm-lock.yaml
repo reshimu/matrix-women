@@ -65,7 +65,7 @@ importers:
 
   fixtures/nextjs-consumer:
     dependencies:
-      '@matrix-ai/ui':
+      '@reshimu/matrix-ai-ui':
         specifier: workspace:*
         version: link:../..
       next:

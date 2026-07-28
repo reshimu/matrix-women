@@ -488,14 +488,21 @@ are a real, intended public API addition). Full evidence and per-slice detail in
 - **The actual `npm publish` was not attempted.** `npm whoami` confirmed no npm auth
   exists on this machine (`ENEEDAUTH`) — logging in requires Shimon's own
   credentials/OTP, not something to do on his behalf. `package.json` still has
-  `"private": true`, deliberately left as-is: flipping it before Shimon confirms
-  which npm scope/account to publish under would be presumptuous. Confirmed via a
-  read-only `npm view @matrix-ai/ui` that the exact name is unclaimed, but scope
-  *ownership* is a separate, genuinely-his-call question.
+  `"private": true`, deliberately left as-is until Shimon confirms he's ready to
+  publish. Confirmed via a read-only `npm view @matrix-ai/ui` that the original name
+  was unclaimed, but scope *ownership* was a separate, genuinely-his-call question.
+- **Resolved:** asked Shimon which npm scope to publish under. Answer: rename to
+  `@reshimu/matrix-ai-ui`, matching this repo's GitHub org. Renamed the package name
+  in `package.json` and every functional reference across the codebase (both
+  fixtures, the Next.js consumer app, `DECISIONS.md`, `README.md`,
+  `ACCEPTANCE_CRITERIA.md`, `RISK_PERFORMANCE_AUDIT.md`) — but deliberately did
+  *not* rewrite historical dated entries in `ROADMAP.md`/`CHANGELOG.md` that
+  describe work done under the old name; those are accurate historical record of
+  what was true at the time, not stale references to fix.
 
 ## Exact next task
 
-The package is publish-ready. Blocked on two things only Shimon can resolve: running
-`npm login` himself, and deciding which npm scope/account to publish under (see
-`NEXT_TASK.md` for the options and exact commands once resolved). Not a "more work
-needed" blocker — everything closeable in this session is closed.
+The package is publish-ready and now named `@reshimu/matrix-ai-ui`. Blocked on one
+thing only Shimon can do: run `npm login` himself, then `npm publish --access public`
+(see `NEXT_TASK.md` for the exact commands). Not a "more work needed" blocker —
+everything closeable in this session is closed.

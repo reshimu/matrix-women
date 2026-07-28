@@ -1,4 +1,4 @@
-import { defaultScene, selectActiveLayers, selectRenderer, validateScene } from '@matrix-ai/ui'
+import { defaultScene, selectActiveLayers, selectRenderer, validateScene } from '@reshimu/matrix-ai-ui'
 
 export default function Page() {
   const result = validateScene(defaultScene)

@@ -43,7 +43,7 @@
       and every validation command (`typecheck`, `lint`, `test`, `build`,
       `test:consumer`, `test:nextjs-consumer`) passed from that fresh install.
 - [x] API documentation recorded — see `README.md`, covering both public entries
-      (`@matrix-ai/ui` config/validation/selection, `@matrix-ai/ui/react` rendering
+      (`@reshimu/matrix-ai-ui` config/validation/selection, `@reshimu/matrix-ai-ui/react` rendering
       components) accurately, including the required `react.css` import and the
       `'use client'`/Next.js note.
 - [x] Fallback/performance evidence and a full risk audit are now consolidated in
@@ -65,8 +65,8 @@
 ## Rendering components exported publicly (2026-07-28) — resolves audit R-006
 
 - [x] `Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait` exported via a separate
-      `@matrix-ai/ui/react` entry (`DECISIONS.md` ADR-0004), not merged into the main
-      browser-free `@matrix-ai/ui` entry — confirmed the main entry is completely
+      `@reshimu/matrix-ai-ui/react` entry (`DECISIONS.md` ADR-0004), not merged into the main
+      browser-free `@reshimu/matrix-ai-ui` entry — confirmed the main entry is completely
       unaffected (`fixtures/library-consumer.mjs` still passes unmodified).
 - [x] A `'use client'` directive at the top of the bundled `react.js` output lets
       Next.js App Router Server Components render these components directly —
@@ -178,7 +178,7 @@ resolved or an explicitly-accepted Low/Informational item.**
 ## Next.js consumption proof (2026-07-27)
 
 - [x] A real Next.js app (`fixtures/nextjs-consumer/`, its own pnpm workspace member,
-      linked via `workspace:*`) imports `@matrix-ai/ui` — `defaultScene`,
+      linked via `workspace:*`) imports `@reshimu/matrix-ai-ui` — `defaultScene`,
       `validateScene`, `selectRenderer`, `selectActiveLayers` — from a Server
       Component with no `'use client'` directive, proving the public entry is
       genuinely SSR/build-time-safe with zero DOM/browser API usage.

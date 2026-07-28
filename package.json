@@ -1,5 +1,5 @@
 {
-  "name": "@matrix-ai/ui",
+  "name": "@reshimu/matrix-ai-ui",
   "version": "0.1.0",
   "private": true,
   "main": "./dist/lib/index.js",
