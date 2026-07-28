@@ -1,27 +1,31 @@
 # Next atomic task
 
-PR #1 (`webgl-portrait-texture`) merged to `main`. A follow-up WebGL visual parity
-pass then landed: the WebGL scene's background gradient, aura/glow position, and
-code-rain effect now match the CSS scene's actual design instead of an unrelated
-abstract vocabulary, live-verified via pixel scans. A real robustness bug was found
-and fixed along the way — config changes now repaint immediately regardless of
-animation state, not just on the next (possibly-never-arriving) animation frame.
-Full evidence in `PROJECT_STATE.md`/`ROADMAP.md`.
+The consolidated risk/performance audit is done:
+[`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md) — real, freshly-verified
+bundle sizes, runtime performance characteristics, a consolidated risk register
+(R-001 through R-009, superseding the piecemeal/stale bullets previously scattered
+across `PROJECT_STATE.md`/`RISKS.md`), and a release-gate verdict. This closes the
+last previously-open release gate in `ACCEPTANCE_CRITERIA.md`. Along the way, closed
+a real test-coverage gap found stale during reconciliation: `Scene.test.tsx` now
+covers the webgl-vs-css branch decision (was flagged open, actually already resolved
+by the time this session started for most other flagged gaps — this one wasn't).
 
 ## Proposed next steps (not started, needs direction)
 
-1. **Decide on public component exports.** `@matrix-ai/ui` still ships only
-   config/validation/selection primitives — the rendering components are demo-only.
-   Decide whether/how to export `Scene`/`SceneFallback`/`SceneWebgl` publicly (affects
-   bundling of CSS, the WebGL shader/texture code, and API surface design).
-2. **Full M4 responsive builder scope.** The round-trip minimum (`SceneBuilder.tsx`)
-   is done; a real drag/drop, multi-scene-management builder is substantially larger.
-3. **Consolidated risk/performance audit.** Evidence exists piecemeal across
-   `PROJECT_STATE.md`/`RISKS.md`; synthesizing it into one document would close the
-   last open release gate.
-4. **Further WebGL polish**, if desired — the rain effect is a reasonable
-   approximation (hashed flickering glyph cells) rather than a literal recreation of
-   the CSS scene's falling-text columns; could go further if warranted.
+All release gates in `ACCEPTANCE_CRITERIA.md` are now checked. Remaining items are
+scoped product decisions, not defects (see `RISK_PERFORMANCE_AUDIT.md` §5):
 
-**Current blocker:** none technical — this is a direction choice, not a technical
-gate.
+1. **Decide R-006**: whether/how to export the rendering components
+   (`Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait`) publicly from
+   `@matrix-ai/ui`, or keep them demo-only/reference-only permanently.
+2. **CI performance budget** (R-005): nothing currently fails a build on bundle-size
+   regression.
+3. **Full M4 responsive builder** (R-009): the round-trip minimum
+   (`SceneBuilder.tsx`) satisfies the release gate; a real drag/drop multi-scene
+   builder is a much larger, separate scope.
+4. **Visual regression tooling** (R-007): would close the "no automated real-browser
+   animation verification" gap properly, if this moves toward an actual release.
+
+**Current blocker:** none technical — this is a product-direction choice, not a
+technical gate. The system is genuinely production-ready for its current stated
+scope (config/validation/selection library + a working, tested reference renderer).

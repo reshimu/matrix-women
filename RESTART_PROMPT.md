@@ -110,12 +110,23 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   glyph-flicker present/absent correctly on the `effects.codeRain` toggle, exactly
   reversible.
 
+- **(2026-07-28, risk/performance audit)** Added
+  [`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md) — freshly-verified bundle
+  sizes (library 2.69 kB, demo 211.56 kB JS), runtime performance characteristics,
+  and a consolidated risk register (R-001–R-009) reconciling the piecemeal risk
+  bullets previously scattered across `PROJECT_STATE.md`/`RISKS.md` (several were
+  stale/already-resolved — called out explicitly, not silently repeated). This closes
+  the last open release gate in `ACCEPTANCE_CRITERIA.md`. Also closed a genuinely
+  still-open gap found during reconciliation: added `Scene.test.tsx` covering the
+  webgl-vs-css branch decision (13 files/43 tests now, up from 12/40).
+
 ## Exact next task
 
-No forced next task — see `NEXT_TASK.md` for candidate directions (deciding whether
-to export the rendering components publicly, full M4 responsive-builder scope, or a
-consolidated risk/performance audit). Update all project records and this restart
-pack with factual validation evidence when done.
+All release gates are checked. No forced next task — see `NEXT_TASK.md` for
+candidate product-direction choices (exporting rendering components publicly, a CI
+performance budget, full M4 responsive-builder scope, or visual regression tooling).
+Update all project records and this restart pack with factual validation evidence
+when done.
 
 ## Non-negotiables
 
@@ -128,40 +139,32 @@ pack with factual validation evidence when done.
 
 ## Known risks
 
-- Visual parity between the CSS and WebGL scenes is now attempted but not literal —
-  the rain effect is a hashed flickering-glyph approximation, not a recreation of the
-  CSS scene's actual falling-text columns. Reasonable, not pixel-identical.
-- A checkbox's `checked` property + dispatched `'change'` event does not reliably
-  trigger React's `onChange` — use a real `.click()` when testing checkboxes.
-  Two false-alarm "bugs" this session were this exact test-harness mistake.
-- The rendering components (`Scene`/`SceneFallback`/`SceneWebgl`) are demo-only —
-  not exported from `@matrix-ai/ui`. Documented explicitly in `README.md` rather than
-  left implicit.
+**Reconciled 2026-07-28** — this section had accumulated several stale/superseded
+entries across sessions (the exact staleness problem `RISK_PERFORMANCE_AUDIT.md` now
+exists to prevent). Current, verified risks only; see
+[`RISK_PERFORMANCE_AUDIT.md`](RISK_PERFORMANCE_AUDIT.md) §4 for the full register with
+severities and mitigations (R-001–R-009).
+
 - **This session's screenshot tooling is fundamentally broken**: the sandboxed
   browser pane doesn't composite frames, and Claude in Chrome's automated tab has a
   genuine `0×0` viewport (confirmed — `resize_window` failed with "bounds must be at
-  least 50% within visible screen space"). Worked around it for static SVG content
-  via `npx resvg-cli` rasterization, but this can't verify animation, canvas/WebGL
-  output, or real interaction. Check whether a properly visible browser window is
-  available another way before relying on screenshots for future visual work.
-- Only a literal human-eyes-on-screen check of the WebGL animation/resize behavior
-  remains unverified — every automated verification path available this session has
-  been exhausted and passed (see spot-check evidence above). Low risk: both APIs used
-  are standard, well-documented, and the suspension observed is confirmed to be a
-  tooling/viewport limitation, not a code issue.
-- Visual parity between the WebGL and CSS scenes is not attempted — the WebGL scene
-  uses an abstract gradient/glow/sparkle vocabulary, not a literal recreation of the
-  matrix-rain/portrait-silhouette CSS look.
-- The `Scene` branch decision (webgl vs. css) has no automated test — verified only by
-  manual live-browser checks (repeatable, but not run in CI).
-- Builder round-trip (M4) and real-DOM/browser regression tests (current tests only
-  exercise an injected fake environment for both the CSS and WebGL hosts) remain
-  outstanding. Next.js consumption is no longer a gap — see evidence above.
-- Only one format (`hero`) is actually mounted in the demo app (`main.tsx`); `portrait`
-  and `square` are proven correct via computed-style inspection but not demoed live.
-  Low priority — real M4 builder work will exercise this properly.
-- Git repository now exists and is pushed to `github.com/reshimu/matrix-women` — the
-  "no Git repository" risk recorded on 2026-07-26 no longer applies. Both Codex and
-  Claude Code now work against this remote; treat any tracker file (`NEXT_TASK.md`,
-  `ROADMAP.md`, `PROJECT_STATE.md`) as unverified until cross-checked against the
-  actual code and a real test run — this file was itself found stale on 2026-07-27.
+  least 50% within visible screen space"). Worked around it for static SVG content via
+  `npx resvg-cli` rasterization and for dynamic content via `gl.readPixels` scans, but
+  neither can verify continuous animation or real interaction visually. Check whether
+  a properly visible browser window is available another way before relying on
+  screenshots for future visual work. (audit R-007)
+- The rendering components (`Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait`)
+  are demo-only — not exported from `@matrix-ai/ui`. Documented explicitly in
+  `README.md` rather than left implicit; a pending product decision, not a defect.
+  (audit R-006)
+- WebGL/CSS visual parity is close but not pixel-identical — the rain effect is a
+  hashed flickering-glyph approximation. (audit R-008)
+- A checkbox's `checked` property + dispatched `'change'` event does not reliably
+  trigger React's `onChange` — use a real `.click()` when testing checkboxes. Two
+  false-alarm "bugs" this session were this exact test-harness mistake, not product
+  defects.
+- No CI-enforced performance budget exists yet (bundle size regression wouldn't be
+  caught automatically). (audit R-005)
+- Treat every tracker file (`NEXT_TASK.md`, `ROADMAP.md`, `PROJECT_STATE.md`, this
+  file) as unverified until cross-checked against the actual code and a real test
+  run — this file was found stale more than once across this project's sessions.
