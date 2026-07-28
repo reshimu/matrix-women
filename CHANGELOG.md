@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-07-27 — WebGL visual parity pass (after PR #1 merged)
+
+- Rewrote `SceneWebgl`'s fragment shader to actually resemble the CSS scene:
+  background radial gradient now matches `.scene`'s position/colors (converted
+  correctly from CSS's top-down percentage to this shader's bottom-origin
+  convention), aura/glow position fixed to match `.scene__aura` (was silently using
+  the wrong value — `0.42` instead of the correct `0.58` — before this pass), and
+  the previous "diagonal sine wave changes gradient-mix speed" hack replaced with an
+  actual procedural matrix-rain effect (hashed per-column scroll, flickering
+  glyph-like cells, gated by `uRainDensity` so `effects.codeRain` genuinely hides
+  it).
+- **Real bug found and fixed during verification:** config changes (e.g. toggling
+  an effect in the live builder) only repainted the canvas on the next animation
+  frame — imperceptibly fast in any real browser, but this session's environment has
+  a documented dead `requestAnimationFrame`, so nothing visibly updated at all,
+  which looked like a shader bug at first. Fixed `SceneWebgl` to always repaint
+  immediately on any config change, independent of animation/reduced-motion state —
+  a genuine robustness improvement (also covers a legitimately paused/backgrounded
+  tab), not just a workaround for this session's tooling.
+- **Test-methodology note for future sessions:** a checkbox's `checked` property +
+  dispatched `'change'` event does not reliably trigger React's `onChange` the way
+  the native-setter + `'input'`-event trick does for text/range/select inputs — a
+  real `.click()` is required. Two false-alarm "bugs" chased this session turned out
+  to be this exact test-harness mistake, not product defects.
+- Live-verified via `gl.readPixels` scans in a real browser: rain glyph-flicker
+  pattern present with `effects.codeRain: true`, cleanly absent with it toggled
+  `false` via a real click, exactly reversible back to the original baseline. Glow
+  and the portrait texture confirmed undisturbed across all four mounted canvases.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (12 files/40 tests,
+  unchanged), `pnpm build`, `pnpm test:consumer` all pass. Library artifact size
+  unchanged (2.69 kB).
+
 ## 2026-07-27 — Hardening branch (`webgl-portrait-texture`, PR #1)
 
 Five slices plus a final hardening pass, each independently validated

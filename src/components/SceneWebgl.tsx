@@ -27,19 +27,48 @@ uniform sampler2D uPortraitTexture;
 uniform vec4 uPortraitBox;
 uniform float uHasPortraitTexture;
 
+float hash(float n) {
+  return fract(sin(n) * 43758.5453123);
+}
+
 void main() {
   vec2 uv = gl_FragCoord.xy / uResolution;
-  vec3 colorA = vec3(0.02, 0.08, 0.09);
-  vec3 colorB = vec3(0.09, 0.35, 0.32);
-  float wave = sin(uTime * (0.2 + uRainDensity * 0.6) + uv.x * 2.0 + uv.y * 1.3);
-  float mixAmount = 0.5 + 0.5 * wave;
-  vec3 color = mix(colorA, colorB, mixAmount);
+  float aspect = uResolution.x / uResolution.y;
 
-  vec2 glowCenter = vec2(0.65, 0.42);
+  // Ambient background: matches the CSS scene's radial-gradient(circle at 67% 38%, ...).
+  // CSS percentages are measured from the top, so 38%-from-top becomes 0.62 in this
+  // bottom-origin uv space.
+  vec2 bgCenter = vec2(0.67, 0.62);
+  vec2 bgUv = vec2(uv.x * aspect, uv.y);
+  vec2 bgCenterAspect = vec2(bgCenter.x * aspect, bgCenter.y);
+  float bgDist = distance(bgUv, bgCenterAspect);
+  vec3 bgNear = vec3(0.094, 0.278, 0.353);
+  vec3 bgMid = vec3(0.031, 0.082, 0.122);
+  vec3 bgFar = vec3(0.02, 0.027, 0.051);
+  vec3 color = mix(bgNear, bgMid, smoothstep(0.0, 0.55, bgDist));
+  color = mix(color, bgFar, smoothstep(0.35, 1.15, bgDist));
+
+  // Matrix code-rain: scrolling glyph-like columns, gated by uRainDensity so the
+  // effects.codeRain toggle (already folded into uRainDensity) actually hides it.
+  float columns = 26.0;
+  float col = floor(uv.x * columns);
+  float colSeed = hash(col * 1.37 + 4.1);
+  float speed = 0.1 + colSeed * 0.28;
+  float scroll = fract(uv.y + uTime * speed + colSeed * 5.0);
+  float cellCount = 22.0;
+  float cell = floor(scroll * cellCount);
+  float glyphSeed = hash(cell * 6.7 + col * 3.1);
+  float glyphOn = step(0.55, glyphSeed);
+  float rain = glyphOn * uRainDensity;
+  color += vec3(0.42, 0.9, 0.79) * rain * 0.85;
+
+  // Aura / lighting glow, matching .scene__aura's "circle at 65% 42%" (from top).
+  vec2 glowCenter = vec2(0.65, 0.58);
   float glow = uGlowIntensity * smoothstep(0.5, 0.0, distance(uv, glowCenter));
   color += glow * vec3(0.55, 0.98, 0.83);
 
-  float noise = fract(sin(dot(uv * 40.0, vec2(12.9898, 78.233))) * 43758.5453);
+  // Ambient sparkle / particles.
+  float noise = fract(sin(dot(uv * 40.0, vec2(12.9898, 78.233)) + uTime * 0.05) * 43758.5453);
   float sparkle = step(0.995 - uSparkle * 0.03, noise) * uSparkle;
   color += sparkle;
 
@@ -89,12 +118,17 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
   const uniforms = useMemo(() => deriveWebglUniforms(scene), [scene])
   const uniformsRef = useRef<WebglSceneUniforms>(uniforms)
   const paintNowRef = useRef<((elapsedSeconds: number) => void) | null>(null)
+  const lastElapsedRef = useRef(0)
   const titleId = useId()
 
   useEffect(() => {
     uniformsRef.current = uniforms
-    if (scene.reducedMotion) paintNowRef.current?.(0)
-  }, [uniforms, scene.reducedMotion])
+    // Repaint immediately regardless of animation state: config changes must be
+    // visible even when the rAF loop isn't currently advancing (host paused,
+    // reduced motion, or a hidden/backgrounded tab) rather than waiting for a
+    // frame that may not come for a while.
+    paintNowRef.current?.(lastElapsedRef.current)
+  }, [uniforms])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -135,6 +169,7 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
 
     const paint = (elapsedSeconds: number) => {
       lastElapsedSeconds = elapsedSeconds
+      lastElapsedRef.current = elapsedSeconds
       if (!gl || !program || !positionBuffer) return
       const uniforms = uniformsRef.current
       gl.useProgram(program)

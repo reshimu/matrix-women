@@ -347,7 +347,38 @@ are a real, intended public API addition). Full evidence and per-slice detail in
 - A consolidated risk/performance-budget audit document — evidence exists piecemeal
   across this file and `RISKS.md` but hasn't been synthesized into one document.
 
+## Evidence as of 2026-07-27 (WebGL visual parity pass, after PR #1 merged to main)
+
+- Rewrote `SceneWebgl`'s fragment shader so it actually resembles the CSS scene:
+  background radial gradient now matches `.scene`'s position/colors (converted from
+  CSS's top-down percentage to this shader's bottom-origin convention), aura/glow
+  position corrected to match `.scene__aura` (was silently wrong before — used
+  `0.42` directly instead of the correct `0.58`), and the old "diagonal sine wave"
+  gradient-speed hack replaced with an actual procedural matrix-rain effect (hashed
+  per-column scroll, flickering glyph cells, gated by `uRainDensity` so the
+  `effects.codeRain` toggle genuinely hides it).
+- **Real bug found and fixed during verification:** config changes only repainted on
+  the next animation frame, which is invisible-fast in any real browser but never
+  arrives at all in this session's environment (a previously-documented dead `rAF`).
+  Fixed `SceneWebgl` to always repaint immediately on any config change, independent
+  of animation/reduced-motion state — a genuine robustness fix (also covers a
+  legitimately paused/backgrounded tab), not just a workaround for this session's
+  tooling.
+- **Methodology note for future sessions:** a checkbox's `checked` property +
+  dispatched `'change'` event does *not* reliably trigger React's `onChange` the way
+  the native-setter + `'input'`-event trick does for text/range/select — use a real
+  `.click()` for checkboxes. Two false-alarm "bugs" this session turned out to be
+  this exact test-harness mistake, not product defects.
+- Live-verified via `gl.readPixels` scans in a real browser: rain glyph-flicker
+  pattern present with `effects.codeRain: true`, cleanly absent (smooth gradient
+  only) with it toggled `false` via a real click, exactly reversible. Glow and the
+  portrait texture confirmed undisturbed across all four mounted canvases.
+- Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (12 files/40 tests,
+  unchanged), `pnpm build`, `pnpm test:consumer`. Library artifact size unchanged
+  (2.69 kB).
+
 ## Exact next task
 
-No forced next task — the hardening branch (PR #1, `webgl-portrait-texture`) is ready
-for review/merge. See `NEXT_TASK.md` for candidate directions once merged.
+No forced next task. Remaining open items: whether to export the rendering
+components publicly, full M4 responsive-builder scope, and a consolidated
+risk/performance audit document. See `NEXT_TASK.md`.

@@ -264,3 +264,56 @@ tests**. Two real bugs were caught and fixed during this hardening work (not
 pre-existing, found *by* the hardening): the WebGL canvas resize listener bug (prior
 session) and the duplicate-id accessibility bug (this session, item 4 above) — both
 are the kind of thing "harden until production-ready" is supposed to surface.
+
+## WebGL visual parity pass (2026-07-27, after PR #1 merged)
+
+Rewrote `SceneWebgl`'s fragment shader to actually resemble the CSS scene instead of
+an unrelated abstract gradient:
+
+- **Background** now mirrors `.scene`'s `radial-gradient(circle at 67% 38%, ...)` —
+  same three color stops, same position (converted from CSS's top-down percentage to
+  this shader's bottom-origin `gl_FragCoord` convention: 38%-from-top → 0.62 in `uv`),
+  aspect-corrected so it renders a true circle regardless of viewport aspect ratio.
+- **Matrix code-rain**: replaced the old "diagonal sine wave changes color-mix speed"
+  approximation with an actual procedural digital-rain effect — hashed per-column
+  scroll speed and phase, quantized into flickering glyph-like cells that scroll
+  downward over time, gated by `uRainDensity` (already zero when `effects.codeRain`
+  is off, so the toggle genuinely hides it rather than just slowing an unrelated
+  gradient).
+- **Aura/glow position** corrected to match `.scene__aura`'s actual `circle at 65%
+  42%` (from top) — the previous shader used `(0.65, 0.42)` directly in bottom-origin
+  `uv` space, which was silently wrong (should have been `(0.65, 0.58)`); fixed as
+  part of this parity pass.
+
+**Bug found and fixed during verification, not before:** config changes (e.g.
+toggling `effects.codeRain` off in the live builder) only took visual effect on the
+*next animation frame* — fine in any real browser (~16ms later, imperceptible), but
+this session's tooling has an already-documented dead `requestAnimationFrame` (see
+the earlier real-browser spot-check entry), so toggling a control produced no visible
+change at all here, which looked at first like a shader bug. Traced it to
+`SceneWebgl`'s uniforms-sync effect only forcing an immediate repaint when
+`scene.reducedMotion` was true; fixed it to always repaint immediately on any config
+change regardless of animation/reduced-motion state, using the last-known elapsed
+time (not a jarring reset to `t=0`) — this is a genuine robustness improvement
+independent of this session's tooling quirk, since it also covers a paused/backgrounded
+tab whose rAF loop isn't currently running for entirely legitimate reasons.
+
+Live-verified in a real browser via `gl.readPixels` scans: a fixed vertical strip
+showed a clearly jagged on/off glyph-flicker pattern with `effects.codeRain: true`,
+and a smooth gradient-only falloff (rain fully gone) with it toggled `false` via a
+real `.click()` on the checkbox — confirmed reversible in both directions, exact
+match to the original baseline on toggling back on. Also re-confirmed the glow and
+portrait-texture rendering were undisturbed across all four mounted canvases
+(hero/portrait/square/builder-preview).
+
+Also surfaced a real test-methodology lesson worth recording: `checked` property +
+dispatched `'change'` event does **not** reliably trigger React's `onChange` for a
+checkbox the way the native-setter + `'input'`-event trick does for text/range/select
+inputs — a real `.click()` is required. Two false-alarm "bugs" this session (the
+Next.js-era format select and this codeRain checkbox) both turned out to be this same
+class of test-harness mistake, not product defects; noting the pattern here so a
+future session doesn't re-debug the same false lead.
+
+Validated: `pnpm typecheck`, `pnpm lint`, `pnpm test` (12 files/40 tests, unchanged —
+this is shader/JS wiring, not new testable pure logic), `pnpm build`,
+`pnpm test:consumer`. Library artifact size unchanged (2.69 kB).
