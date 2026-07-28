@@ -1,4 +1,4 @@
-# @matrix-ai/ui
+# @reshimu/matrix-ai-ui
 
 A renderer-independent scene-configuration system for a cinematic "digital human in
 light/code" hero visual — portrait, code-rain, particle, and lighting layers, composed
@@ -12,7 +12,7 @@ Full product spec, governance, and build history: [`PROJECT_SPEC.md`](PROJECT_SP
 ## Install
 
 ```bash
-pnpm add @matrix-ai/ui
+pnpm add @reshimu/matrix-ai-ui
 ```
 
 Peer dependencies: `react >=18`, `react-dom >=18`.
@@ -21,14 +21,14 @@ Peer dependencies: `react >=18`, `react-dom >=18`.
 
 | Entry | What it is | DOM/CSS dependency |
 | --- | --- | --- |
-| `@matrix-ai/ui` | Config, validation, and renderer-selection primitives. | None — safe in a plain Node script or a React Server Component. |
-| `@matrix-ai/ui/react` | The actual rendering components. | Requires the DOM (client-rendered); ships its own `'use client'` directive for Next.js App Router. Needs `@matrix-ai/ui/react.css` imported once. |
+| `@reshimu/matrix-ai-ui` | Config, validation, and renderer-selection primitives. | None — safe in a plain Node script or a React Server Component. |
+| `@reshimu/matrix-ai-ui/react` | The actual rendering components. | Requires the DOM (client-rendered); ships its own `'use client'` directive for Next.js App Router. Needs `@reshimu/matrix-ai-ui/react.css` imported once. |
 
 This split is deliberate — see `DECISIONS.md` ADR-0003/ADR-0004. You can use just the
 config layer and build your own renderer, or use the shipped rendering components
 directly.
 
-## `@matrix-ai/ui` — config, validation, selection
+## `@reshimu/matrix-ai-ui` — config, validation, selection
 
 The public entry (`src/index.ts`) is deliberately **renderer-independent and
 browser-free** — it has zero DOM/`window` dependencies, so it's safe to import in a
@@ -44,7 +44,7 @@ import {
   selectRenderer,
   exportSceneConfig,
   importSceneConfig,
-} from '@matrix-ai/ui'
+} from '@reshimu/matrix-ai-ui'
 import type {
   SceneConfig,
   SceneFormat,
@@ -53,7 +53,7 @@ import type {
   SceneValidationResult,
   RendererCapabilities,
   RendererKind,
-} from '@matrix-ai/ui'
+} from '@reshimu/matrix-ai-ui'
 ```
 
 | Export | What it does |
@@ -88,11 +88,11 @@ type SceneConfig = {
 }
 ```
 
-## `@matrix-ai/ui/react` — the rendering components
+## `@reshimu/matrix-ai-ui/react` — the rendering components
 
 ```ts
-import { Scene, SceneFallback, SceneWebgl, SubjectPortrait } from '@matrix-ai/ui/react'
-import '@matrix-ai/ui/react.css'
+import { Scene, SceneFallback, SceneWebgl, SubjectPortrait } from '@reshimu/matrix-ai-ui/react'
+import '@reshimu/matrix-ai-ui/react.css'
 ```
 
 | Export | What it does |
@@ -102,7 +102,7 @@ import '@matrix-ai/ui/react.css'
 | `SceneWebgl` | The WebGL-enhanced scene — a config-driven shader (background gradient, procedural rain, glow, sparkle) with the same portrait illustration rasterized onto a texture and composited in. |
 | `SubjectPortrait` | Just the digital-woman SVG illustration on its own, if you want to reuse it outside a full scene. Pure presentational — no hooks, works as a Server Component too. |
 
-**You must import `@matrix-ai/ui/react.css` once** (e.g., in your root layout) for
+**You must import `@reshimu/matrix-ai-ui/react.css` once** (e.g., in your root layout) for
 these components to be styled — it isn't injected automatically, matching the
 standard "consumer imports the stylesheet" pattern most component libraries use.
 
@@ -125,15 +125,15 @@ pnpm typecheck
 pnpm lint
 pnpm test          # Vitest — unit + jsdom real-DOM/real-browser-environment + accessibility tests
 pnpm build         # builds both the demo (dist/) and the library artifact (dist/lib/)
-pnpm test:consumer         # proves @matrix-ai/ui is importable standalone (plain Node/ESM)
-pnpm test:react-consumer   # proves @matrix-ai/ui/react is importable standalone and SSRs via react-dom/server
+pnpm test:consumer         # proves @reshimu/matrix-ai-ui is importable standalone (plain Node/ESM)
+pnpm test:react-consumer   # proves @reshimu/matrix-ai-ui/react is importable standalone and SSRs via react-dom/server
 pnpm test:nextjs-consumer  # proves both entries under a real `next build` (fixtures/nextjs-consumer)
 pnpm check:bundle-size     # fails if a published artifact regresses past its size budget
 ```
 
 `.github/workflows/ci.yml` runs all of the above on every push/PR.
 
-This is a pnpm workspace: the root package (`@matrix-ai/ui`) and
+This is a pnpm workspace: the root package (`@reshimu/matrix-ai-ui`) and
 `fixtures/nextjs-consumer` (a real Next.js app depending on it via `workspace:*`) are
 both workspace members.
 
@@ -141,7 +141,7 @@ both workspace members.
 
 - `src/scene/` — public, browser-free: types, defaults, validation, layer selection, JSON round-trip.
 - `src/renderer/` — `selectRenderer` (public, pure) plus WebGL-specific pure helpers (`deriveWebglUniforms`, `computePortraitBox`).
-- `src/renderer/browser/` — browser-only renderer lifecycle hosts (CSS + WebGL) and the portrait Canvas2D→WebGL texture painter; internal implementation detail of the `@matrix-ai/ui/react` components, not exported directly.
-- `src/components/` — `Scene.tsx`, `SceneFallback.tsx`, `SceneWebgl.tsx`, `SubjectPortrait.tsx` are exported publicly via `@matrix-ai/ui/react`; `SceneBuilder.tsx`, `builderState.ts`, and `DemoFormats.tsx` are this repo's own dev tooling and stay internal.
-- `src/styles.css` — public design-system styles, imported by `@matrix-ai/ui/react`. `src/demo.css` — demo-only builder/gallery chrome, imported only by this repo's own `src/main.tsx`; kept separate so it never ships in the public `react.css` (a real bug this repo hit once — see `ROADMAP.md`).
+- `src/renderer/browser/` — browser-only renderer lifecycle hosts (CSS + WebGL) and the portrait Canvas2D→WebGL texture painter; internal implementation detail of the `@reshimu/matrix-ai-ui/react` components, not exported directly.
+- `src/components/` — `Scene.tsx`, `SceneFallback.tsx`, `SceneWebgl.tsx`, `SubjectPortrait.tsx` are exported publicly via `@reshimu/matrix-ai-ui/react`; `SceneBuilder.tsx`, `builderState.ts`, and `DemoFormats.tsx` are this repo's own dev tooling and stay internal.
+- `src/styles.css` — public design-system styles, imported by `@reshimu/matrix-ai-ui/react`. `src/demo.css` — demo-only builder/gallery chrome, imported only by this repo's own `src/main.tsx`; kept separate so it never ships in the public `react.css` (a real bug this repo hit once — see `ROADMAP.md`).
 - `fixtures/` — consumption proofs: a plain-Node script for each entry, and a real Next.js app exercising both.

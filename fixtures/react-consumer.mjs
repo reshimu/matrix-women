@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { defaultScene } from '@matrix-ai/ui'
-import { Scene, SceneFallback, SubjectPortrait } from '@matrix-ai/ui/react'
+import { defaultScene } from '@reshimu/matrix-ai-ui'
+import { Scene, SceneFallback, SubjectPortrait } from '@reshimu/matrix-ai-ui/react'
 
 const fallbackHtml = renderToStaticMarkup(createElement(SceneFallback, { scene: defaultScene }))
 if (!fallbackHtml.includes(defaultScene.title)) {

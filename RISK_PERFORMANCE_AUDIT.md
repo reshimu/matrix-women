@@ -1,7 +1,7 @@
 # Risk & performance audit
 
 **Date:** 2026-07-28 (initial); **updated same day, three times** — after the
-rendering components were exported publicly (`@matrix-ai/ui/react`, ADR-0004; §2.1
+rendering components were exported publicly (`@reshimu/matrix-ai-ui/react`, ADR-0004; §2.1
 and the executive summary revised to match), after CI plus a bundle-size budget were
 added (`.github/workflows/ci.yml`, `scripts/check-bundle-size.mjs`; R-005 resolved),
 and after full M4 responsive builder scope landed (R-009 resolved; §2.1's `react.css`
@@ -19,9 +19,9 @@ called out explicitly rather than silently repeated.
 
 ## 1. Executive summary
 
-The published package now ships **two entries**: `@matrix-ai/ui` — a **2.28 kB**
+The published package now ships **two entries**: `@reshimu/matrix-ai-ui` — a **2.28 kB**
 configuration/validation/selection core with zero runtime dependencies and zero DOM
-access — and `@matrix-ai/ui/react` — **20.19 kB** (6.27 kB gzip) of actual rendering
+access — and `@reshimu/matrix-ai-ui/react` — **20.19 kB** (6.27 kB gzip) of actual rendering
 components (`Scene`, `SceneFallback`, `SceneWebgl`, `SubjectPortrait`), plus an
 **10.08 kB** stylesheet the consumer imports explicitly. The rendering components are
 no longer demo-only — they're the same code this repo's demo uses, exported behind a
@@ -47,20 +47,20 @@ regression tooling), not defects in what ships today.
 
 ### 2.1 Published package footprint (what a consumer actually installs)
 
-Freshly rebuilt 2026-07-28, after the `@matrix-ai/ui/react` export landed:
+Freshly rebuilt 2026-07-28, after the `@reshimu/matrix-ai-ui/react` export landed:
 
 | Artifact | Size | Gzip |
 | --- | --- | --- |
-| `dist/lib/index.js` (`@matrix-ai/ui`) | 2.28 kB | 1.01 kB |
-| `dist/lib/react.js` (`@matrix-ai/ui/react`) | 20.19 kB | 6.27 kB |
-| `dist/lib/react.css` (`@matrix-ai/ui/react.css`) | 10.08 kB | 3.14 kB |
+| `dist/lib/index.js` (`@reshimu/matrix-ai-ui`) | 2.28 kB | 1.01 kB |
+| `dist/lib/react.js` (`@reshimu/matrix-ai-ui/react`) | 20.19 kB | 6.27 kB |
+| `dist/lib/react.css` (`@reshimu/matrix-ai-ui/react.css`) | 10.08 kB | 3.14 kB |
 | `dist/lib/select-*.js` (shared chunk, both entries import it) | 0.48 kB | 0.29 kB |
 
-- A consumer who imports only `@matrix-ai/ui` (config/validation/selection) pays only
+- A consumer who imports only `@reshimu/matrix-ai-ui` (config/validation/selection) pays only
   the first row — 2.28 kB, unchanged in spirit from before the split (the drop from
   2.69 kB to 2.28 kB is `select.ts` moving into the shared chunk both entries use, not
   a size regression of the pure entry's own code).
-- A consumer who also imports `@matrix-ai/ui/react` pays the second and third rows on
+- A consumer who also imports `@reshimu/matrix-ai-ui/react` pays the second and third rows on
   top — real rendering components (WebGL shader/texture code, the CSS scene, the
   portrait SVG illustration) plus their stylesheet, not injected automatically.
 - Zero runtime `dependencies` in `package.json` for either entry — only
@@ -162,7 +162,7 @@ never removed; reconciled here against actual current code, not just copied).
 | R-003 | Low | External or unlicensed artwork could violate the asset-provenance directive. | Resolved | All visual assets are inline, hand-authored SVG paths/gradients — no external image service, no unlicensed artwork, in either renderer. |
 | R-004 | Medium | Particle layer renders one DOM node per particle (up to 200). | Open, low-likelihood | See §2.4. Validation-capped, not unbounded; no shipped config approaches the ceiling. |
 | R-005 | Medium | No CI-enforced performance budget (bundle size, etc.). | **Resolved 2026-07-28** | `.github/workflows/ci.yml` (previously no CI existed at all) runs the full validation suite on every push/PR, ending with `pnpm check:bundle-size` (`scripts/check-bundle-size.mjs`), which fails the build if `index.js`/`react.js`/`react.css`/any shared chunk regresses past a defined threshold. Verified the check-script actually fails correctly, not just passes silently, by temporarily lowering a budget and confirming a non-zero exit. |
-| R-006 | Low | The public package doesn't export the rendering components — only config/validation/selection. | **Resolved 2026-07-28** | `Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait` now exported via a separate `@matrix-ai/ui/react` entry (ADR-0004), with a matching `@matrix-ai/ui/react.css`, a `'use client'` boundary verified against a real `next build`, and a new consumer fixture (`fixtures/react-consumer.mjs`). The `.` entry is unaffected — still zero DOM/CSS dependencies. |
+| R-006 | Low | The public package doesn't export the rendering components — only config/validation/selection. | **Resolved 2026-07-28** | `Scene`/`SceneFallback`/`SceneWebgl`/`SubjectPortrait` now exported via a separate `@reshimu/matrix-ai-ui/react` entry (ADR-0004), with a matching `@reshimu/matrix-ai-ui/react.css`, a `'use client'` boundary verified against a real `next build`, and a new consumer fixture (`fixtures/react-consumer.mjs`). The `.` entry is unaffected — still zero DOM/CSS dependencies. |
 | R-007 | Low | No real-browser continuous-animation/resize test automation exists. | Open, environment-constrained | Every tool available across this project's sessions has a dead-`rAF`/non-compositing limitation; worked around via static verification and manual real-browser checks (see §3). Not closeable without a different test environment (e.g., real Playwright/Puppeteer with an actual display). |
 | R-008 | Low | WebGL's visual vocabulary (procedural gradient/rain/glow) is an approximation of the CSS scene, not pixel-identical. | Accepted | Intentional scope decision from the visual-parity pass — matches position/color/behavior, not a literal recreation of CSS's falling-text columns. |
 | R-009 | Informational | Full M4 responsive-builder scope (drag/drop layer editing, multi-scene management) exceeds the round-trip minimum currently shipped (`SceneBuilder.tsx`). | **Resolved 2026-07-28** | `SceneBuilder.tsx` now has multi-scene management (new/switch/duplicate/delete, `localStorage`-persisted) and generic layer add/remove/reorder (drag-and-drop + keyboard-accessible ↑/↓ buttons) via new pure helpers (`src/components/builderState.ts`, 18 unit tests) plus 9 component tests. Also found and fixed a real bug during this work: the public `react.css` was accidentally shipping demo-only builder styles (CSS isn't tree-shaken); split into `src/styles.css`/`src/demo.css`, shrinking `react.css` from 12.98 kB to 10.08 kB. |
@@ -188,7 +188,7 @@ never removed; reconciled here against actual current code, not just copied).
 | Typecheck and lint pass | ✅ Pass (verified 2026-07-28) |
 | Relevant unit/lifecycle/browser/accessibility/reduced-motion/asset-failure tests pass | ✅ Pass — 13 files/43 tests (see §3 for what's covered vs. named-open) |
 | Visual output inspected at required breakpoints | ✅ Done repeatedly across sessions at 1440×900 and 320×700, both renderers, all three formats |
-| Package independently consumable in Vite and Next.js | ✅ Both proven, for both entries — Vite via the demo itself, Next.js via `fixtures/nextjs-consumer/` (`.` entry at `/`, `@matrix-ai/ui/react` at `/react` with a verified Server-Component-renders-Client-Component `'use client'` boundary) with a real `next build`/`next dev` |
+| Package independently consumable in Vite and Next.js | ✅ Both proven, for both entries — Vite via the demo itself, Next.js via `fixtures/nextjs-consumer/` (`.` entry at `/`, `@reshimu/matrix-ai-ui/react` at `/react` with a verified Server-Component-renders-Client-Component `'use client'` boundary) with a real `next build`/`next dev` |
 | Builder round-trips scene configuration | ✅ `SceneBuilder.tsx` + `exportSceneConfig`/`importSceneConfig`, round-trip-tested (`roundTrip.test.ts`), now with full multi-scene management and generic layer editing (R-009 resolved) |
 | Fallback, accessibility, performance evidence, risks, API documentation, clean-install results recorded | ✅ This document + `README.md` + a verified clean-install run (`rm -rf node_modules` + `pnpm install --frozen-lockfile` + full validation, recorded in `ROADMAP.md`) |
 | No unresolved critical or high-severity defect remains | ✅ Nothing in the risk register above is rated above Medium, and every Medium item has a named mitigation or is explicitly accepted |

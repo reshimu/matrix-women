@@ -470,9 +470,39 @@ are a real, intended public API addition). Full evidence and per-slice detail in
   13/43), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
   `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass.
 
+## Evidence as of 2026-07-28 (npm publish attempt: two real packaging bugs found, publish itself blocked)
+
+- Checked publish-readiness before attempting anything. Found two genuine bugs:
+  `react`/`react-dom`/`vite`/`@vitejs/plugin-react`/`tailwindcss` were listed under
+  `"dependencies"` (with `react`/`react-dom` *also* in `peerDependencies`), which
+  would've forced a duplicate React instance into every consumer's install plus
+  unnecessary Vite/Tailwind installs. Moved all five to `devDependencies`.
+- `"files": ["dist"]` shipped the entire `dist/` directory, which `pnpm build`
+  populates with both the library (`dist/lib/`) *and* this repo's own demo app
+  (`dist/assets/*`, 216 kB). Verified with `npm pack --dry-run`: 82.8 kB packed /
+  281.8 kB unpacked before the fix → 16.6 kB / 52.0 kB after narrowing to
+  `"files": ["dist/lib"]` — exactly `dist/lib/**` + `README.md` + `package.json`.
+- Re-ran full validation: `pnpm typecheck`, `pnpm lint`, `pnpm test` (15 files/70
+  tests, unchanged), `pnpm build`, `pnpm test:consumer`, `pnpm test:react-consumer`,
+  `pnpm test:nextjs-consumer`, `pnpm check:bundle-size` all pass.
+- **The actual `npm publish` was not attempted.** `npm whoami` confirmed no npm auth
+  exists on this machine (`ENEEDAUTH`) — logging in requires Shimon's own
+  credentials/OTP, not something to do on his behalf. `package.json` still has
+  `"private": true`, deliberately left as-is until Shimon confirms he's ready to
+  publish. Confirmed via a read-only `npm view @matrix-ai/ui` that the original name
+  was unclaimed, but scope *ownership* was a separate, genuinely-his-call question.
+- **Resolved:** asked Shimon which npm scope to publish under. Answer: rename to
+  `@reshimu/matrix-ai-ui`, matching this repo's GitHub org. Renamed the package name
+  in `package.json` and every functional reference across the codebase (both
+  fixtures, the Next.js consumer app, `DECISIONS.md`, `README.md`,
+  `ACCEPTANCE_CRITERIA.md`, `RISK_PERFORMANCE_AUDIT.md`) — but deliberately did
+  *not* rewrite historical dated entries in `ROADMAP.md`/`CHANGELOG.md` that
+  describe work done under the old name; those are accurate historical record of
+  what was true at the time, not stale references to fix.
+
 ## Exact next task
 
-No forced next task. Every risk in `RISK_PERFORMANCE_AUDIT.md`'s register is now
-either resolved or an explicitly-accepted Low/Informational item. Remaining open
-items are optional: visual regression tooling, and whether to publish to npm (see
-`NEXT_TASK.md`).
+The package is publish-ready and now named `@reshimu/matrix-ai-ui`. Blocked on one
+thing only Shimon can do: run `npm login` himself, then `npm publish --access public`
+(see `NEXT_TASK.md` for the exact commands). Not a "more work needed" blocker —
+everything closeable in this session is closed.

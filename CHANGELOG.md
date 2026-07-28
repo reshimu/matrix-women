@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-07-28 — Renamed package to `@reshimu/matrix-ai-ui`
+
+- Shimon's answer to the npm-scope question below: rename rather than try to claim
+  the `@matrix-ai` org. New name matches this repo's GitHub org (`reshimu`).
+- Updated `package.json`'s `name` field, both entry points' consumers
+  (`fixtures/library-consumer.mjs`, `fixtures/react-consumer.mjs`,
+  `fixtures/nextjs-consumer/**`), `README.md`, `DECISIONS.md`,
+  `ACCEPTANCE_CRITERIA.md`, `RISK_PERFORMANCE_AUDIT.md`, and the evergreen
+  (non-dated) sections of `RESTART_PROMPT.md`.
+- Deliberately left dated historical entries in this file, `ROADMAP.md`, and
+  `STATE.md` referencing the old `@matrix-ai/ui` name untouched — they're an
+  accurate record of what was true at the time, not stale references to fix.
+- Re-ran `pnpm install` to regenerate the lockfile/workspace symlink under the new
+  name, then the full validation suite.
+
+## 2026-07-28 — npm publish prep: two real packaging bugs found and fixed
+
+- Moved `react`, `react-dom`, `vite`, `@vitejs/plugin-react`, `tailwindcss` from
+  `"dependencies"` to `"devDependencies"`. `react`/`react-dom` were also listed as
+  `peerDependencies`, so leaving them in `dependencies` too would have forced a
+  second copy of React into every consumer's install (the classic "duplicate React
+  instance" bug) — plus Vite/Tailwind as unnecessary runtime installs for a package
+  with zero actual runtime dependencies.
+- Changed `"files": ["dist"]` to `"files": ["dist/lib"]`. `pnpm build` writes both
+  the library and this repo's own demo app into `dist/`, so the old config shipped
+  the entire demo bundle (216 kB) inside the published tarball. Verified with
+  `npm pack --dry-run` before and after: 82.8 kB packed / 281.8 kB unpacked →
+  16.6 kB packed / 52.0 kB unpacked, 25 files, exactly `dist/lib/**` + `README.md`.
+- Re-ran full validation after both fixes: `pnpm typecheck`, `pnpm lint`, `pnpm test`
+  (15 files/70 tests, unchanged), `pnpm build`, `pnpm test:consumer`,
+  `pnpm test:react-consumer`, `pnpm test:nextjs-consumer`, `pnpm check:bundle-size`
+  all pass.
+- **Did not attempt the actual `npm publish`**: this machine has no npm auth
+  configured (`npm whoami` → `ENEEDAUTH`), and logging in on Shimon's behalf isn't
+  something an agent should do regardless of request. `package.json` still has
+  `"private": true`, left as-is pending Shimon's decision on which npm scope/account
+  to publish under (see `NEXT_TASK.md`) — confirmed via a read-only `npm view` that
+  the exact package name is unclaimed, but scope ownership is a separate question
+  this session can't resolve.
+
 ## 2026-07-28 — Full M4 responsive builder scope
 
 - Added `src/components/builderState.ts`: pure, unit-tested helpers
