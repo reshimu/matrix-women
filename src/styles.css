@@ -45,3 +45,7 @@ h1 { margin: 0 0 .9rem; max-width: 11ch; font-size: clamp(2.65rem, 7vw, 6.75rem)
 .scene--square { aspect-ratio: 1; }
 .scene--portrait .scene__content, .scene--square .scene__content { align-self: auto; width: 100%; text-align: center; }
 .scene--portrait .scene__subject, .scene--square .scene__subject { position: relative; inset: auto; width: 62%; height: 55%; margin: 0 auto; }
+
+/* Demo-only chrome (src/main.tsx): not part of the design system itself. */
+.demo-format { padding-block: 2rem; }
+.demo-format__label { margin: 0 0 .75rem; padding-inline: clamp(1.5rem, 6vw, 6rem); font: 700 .7rem/1 ui-monospace, monospace; letter-spacing: .18em; text-transform: uppercase; color: #7be9d1; }

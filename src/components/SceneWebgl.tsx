@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef } from 'react'
 import type { SceneConfig } from '../scene'
 import { createWebglRendererHost } from '../renderer/browser/webglRendererHost'
 import { createPortraitTexture } from '../renderer/browser/portraitTexture'
@@ -89,6 +89,7 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
   const uniforms = useMemo(() => deriveWebglUniforms(scene), [scene])
   const uniformsRef = useRef<WebglSceneUniforms>(uniforms)
   const paintNowRef = useRef<((elapsedSeconds: number) => void) | null>(null)
+  const titleId = useId()
 
   useEffect(() => {
     uniformsRef.current = uniforms
@@ -214,11 +215,11 @@ export function SceneWebgl({ scene }: SceneWebglProps) {
   }, [scene.reducedMotion, scene.format])
 
   return (
-    <section className={`scene scene--${scene.format}`} aria-labelledby="scene-title">
+    <section className={`scene scene--${scene.format}`} aria-labelledby={titleId}>
       <canvas ref={canvasRef} className="scene__webgl-canvas" aria-hidden="true" />
       <div className="scene__content">
         <p className="scene__eyebrow">{scene.eyebrow}</p>
-        <h1 id="scene-title">{scene.title}</h1>
+        <h1 id={titleId}>{scene.title}</h1>
         <p className="scene__body">A WebGL-enhanced scene composed from the same layer/effect config as the CSS fallback.</p>
         <button type="button" className="scene__button">Explore the system <span aria-hidden="true">→</span></button>
       </div>
