@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef } from 'react'
 import type { CSSProperties } from 'react'
 import type { SceneConfig, SceneLayer } from '../scene'
 import { selectActiveLayers } from '../scene'
@@ -56,6 +56,7 @@ export function SceneFallback({ scene }: SceneFallbackProps) {
   const motionClass = scene.reducedMotion ? 'scene--still' : 'scene--animated'
   const sceneRef = useRef<HTMLElement>(null)
   const activeLayers = useMemo(() => selectActiveLayers(scene), [scene])
+  const titleId = useId()
 
   useEffect(() => {
     if (!sceneRef.current) return
@@ -65,11 +66,11 @@ export function SceneFallback({ scene }: SceneFallbackProps) {
   }, [])
 
   return (
-    <section ref={sceneRef} className={`scene scene--${scene.format} ${motionClass}`} aria-labelledby="scene-title">
+    <section ref={sceneRef} className={`scene scene--${scene.format} ${motionClass}`} aria-labelledby={titleId}>
       {activeLayers.map(renderLayer)}
       <div className="scene__content">
         <p className="scene__eyebrow">{scene.eyebrow}</p>
-        <h1 id="scene-title">{scene.title}</h1>
+        <h1 id={titleId}>{scene.title}</h1>
         <p className="scene__body">A renderer-independent scene foundation with a dependable CSS fallback.</p>
         <button type="button" className="scene__button">Explore the system <span aria-hidden="true">→</span></button>
       </div>

@@ -85,17 +85,28 @@ Continue the Matrix AI UI greenfield build in `C:\dev\matrix-women`. Read `AGENT
   reading the PNG, iterating 4 versions until proportions read correctly (not the
   earlier "snowman"). Confirmed the shipped component's live DOM output is
   byte-identical to the verified preview.
-- Last full validation passed 2026-07-27: typecheck, lint, **7 Vitest files / 19
-  tests**, both consumer fixtures (`test:consumer` and `test:nextjs-consumer`), demo
-  build, and library build. Library artifact size unchanged (2.26 kB).
+- **(2026-07-27, hardening branch `webgl-portrait-texture`, PR #1)** Five slices, all
+  live-verified: (1) ported the illustration into the WebGL scene via a Canvas2D→
+  WebGL texture, positioned per-format with `computePortraitBox`; (2) added `jsdom`
+  real-DOM lifecycle test coverage for `createDefaultBrowserEnvironment()`, closing a
+  repeatedly-flagged gap; (3) added accessibility/keyboard tests
+  (`@testing-library/react`); (4) demoed `portrait`/`square` live, which surfaced and
+  fixed a real duplicate-id a11y bug (`useId()`); (5) built a minimal config
+  round-trip builder (`SceneBuilder.tsx`, `exportSceneConfig`/`importSceneConfig` now
+  public), round-trip verified exact. Final hardening: an asset-failure test, a real
+  `README.md`, a genuine clean-install verification (`rm -rf node_modules` + `pnpm
+  install --frozen-lockfile`), and release-gate reconciliation.
+- Last full validation passed 2026-07-27 from a **clean install**: typecheck, lint,
+  **12 Vitest files / 40 tests** (up from 7/19), both consumer fixtures, demo build,
+  and library build (2.69 kB, up from 2.26 kB — a real public API addition).
 
 ## Exact next task
 
-The digital-woman subject now has a real illustration. No forced next task — see
-`NEXT_TASK.md` for candidate directions (further illustration refinement, WebGL visual
-parity, demoing portrait/square formats live, starting M4's builder work, or
-accessibility/keyboard test coverage). Update all project records and this restart
-pack with factual validation evidence when done.
+PR #1 (`webgl-portrait-texture`) is ready for review/merge — not merged automatically.
+After that, no forced next task — see `NEXT_TASK.md` for candidate directions (WebGL
+visual parity, deciding whether to export the rendering components publicly, full M4
+responsive-builder scope, or a consolidated risk/performance audit). Update all
+project records and this restart pack with factual validation evidence when done.
 
 ## Non-negotiables
 
@@ -108,6 +119,14 @@ pack with factual validation evidence when done.
 
 ## Known risks
 
+- **PR #1 (`webgl-portrait-texture`) is not yet merged.** All work described above
+  lives on that branch, validated from a clean install, but `main` doesn't have it
+  until the PR is reviewed and merged.
+- Visual parity between the CSS and WebGL scenes is still not attempted (WebGL uses
+  an abstract gradient/glow/sparkle vocabulary plus the portrait texture).
+- The rendering components (`Scene`/`SceneFallback`/`SceneWebgl`) are demo-only —
+  not exported from `@matrix-ai/ui`. Documented explicitly in `README.md` rather than
+  left implicit.
 - **This session's screenshot tooling is fundamentally broken**: the sandboxed
   browser pane doesn't composite frames, and Claude in Chrome's automated tab has a
   genuine `0×0` viewport (confirmed — `resize_window` failed with "bounds must be at
