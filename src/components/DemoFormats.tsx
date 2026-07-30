@@ -1,5 +1,6 @@
 import { Scene } from './Scene'
 import { SceneBuilder } from './SceneBuilder'
+import { VoicePanel } from './VoicePanel'
 import { defaultScene } from '../scene'
 import type { SceneFormat } from '../scene'
 
@@ -17,6 +18,7 @@ export function DemoFormats({ reducedMotion }: DemoFormatsProps) {
         </div>
       ))}
       <SceneBuilder />
+      <VoicePanel />
     </>
   )
 }
