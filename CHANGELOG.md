@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-07-30 — MatrixAvatar: the subject becomes a living glyph hologram
+
+- New `MatrixAvatar` (exported from `/react`): a canvas-2D glyph-field renderer —
+  any `CanvasImageSource` is luminance-sampled into a grid where each cell draws a
+  charset glyph whose brightness tier follows luminance × breathing × a traveling
+  wave + Sobel rim light, with code-rain behind/in front and a procedural skyline.
+  Continuous glyph churn; owner-approved target look from the reference video
+  (spec: `docs/specs/matrix-avatar.md`).
+- The abstract SVG figure is no longer the hero subject: BOTH renderers now mount
+  `MatrixAvatar` (directly in `SceneFallback`; as a DOM overlay in `SceneWebgl`,
+  whose portrait-texture shader path is deleted — `portraitTexture.ts` and
+  `portraitLayout.ts` removed). `SubjectPortrait` remains exported.
+- Default subject is repo-owned gradient-sculpted art (`avatar/defaultPortrait.ts`):
+  serene closed-eyes head-and-shoulders, non-sexualized, no external assets.
+- Demo gains an Avatar Lab: drop/browse a local image or video as the luminance
+  source (object URL only, never uploaded); videos are resampled per frame.
+- Lifecycle per AGENTS.md: `createCssRendererHost` pause/resume, reduced-motion
+  still frame, deterministic teardown, DPR ≤ 2, ≤ 8k cells.
+- Validation: 102 tests (new glyph-field/luminance suites), lint/typecheck clean,
+  all bundle budgets pass (`react.js` 29.63 kB of 30 kB — headroom is now thin),
+  library/react/Next.js consumers green. Animation proven live: 24 consecutive
+  headless-Chrome frames, zero identical pairs.
+
 ## 2026-07-28 — Renamed package to `@reshimu/matrix-ai-ui`
 
 - Shimon's answer to the npm-scope question below: rename rather than try to claim

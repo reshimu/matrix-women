@@ -95,7 +95,8 @@ describe('Scene branch decision', () => {
     render(<Scene scene={{ ...defaultScene, reducedMotion: false }} />)
 
     expect(document.querySelector('.scene__webgl-canvas')).not.toBeNull()
-    expect(document.querySelector('.scene__subject')).toBeNull()
+    // The glyph-hologram subject is renderer-independent: both branches mount it.
+    expect(document.querySelector('.scene__subject')).not.toBeNull()
   })
 
   it('mounts SceneFallback when WebGL is unavailable', () => {
