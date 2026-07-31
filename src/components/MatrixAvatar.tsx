@@ -5,6 +5,7 @@ import {
   BRIGHTNESS_TIERS,
   GLYPH_CHARSET,
   advanceGlyphField,
+  breathAt,
   brightnessTier,
   cellBrightness,
   computeEdgeMap,
@@ -12,7 +13,7 @@ import {
   type GlyphFieldState,
   type RainColumn,
 } from '../avatar/glyphField'
-import { sampleLuminance } from '../avatar/luminance'
+import { computeContainBox, readSourceDimensions, sampleLuminance } from '../avatar/luminance'
 import { createDefaultPortraitCanvas } from '../avatar/defaultPortrait'
 import { createCssRendererHost } from '../renderer/browser/cssRendererHost'
 
@@ -185,6 +186,12 @@ export function MatrixAvatar({ source, reducedMotion = false, className }: Matri
     const sampleCtx = sampleCanvas.getContext('2d', { willReadFrequently: true })
     if (!sampleCtx) return
 
+    // Continuous-tone pass: the source itself, grayscaled and tinted hologram-green.
+    // The reference look is NOT pure glyph art — the figure's smooth shading shows
+    // through, with the glyph field as a luminous texture on top of it.
+    const toneCanvas = document.createElement('canvas')
+    const toneCtx = toneCanvas.getContext('2d')
+
     const rng = mulberry32(97)
     let grid: Grid | null = null
     let atlas: HTMLCanvasElement | null = null
@@ -216,6 +223,33 @@ export function MatrixAvatar({ source, reducedMotion = false, className }: Matri
     const isVideoSource = () =>
       typeof HTMLVideoElement !== 'undefined' && sourceRef.current instanceof HTMLVideoElement
 
+    let lastToneSource: CanvasImageSource | null = null
+    let lastToneW = 0
+    let lastToneH = 0
+
+    const renderTone = (src: CanvasImageSource, boxW: number, boxH: number): boolean => {
+      if (!toneCtx) return false
+      const { width: sw, height: sh } = readSourceDimensions(src)
+      if (sw <= 0 || sh <= 0 || boxW < 1 || boxH < 1) return false
+      const scale = Math.min(1, 1024 / Math.max(boxW, boxH))
+      const tw = Math.max(1, Math.round(boxW * scale))
+      const th = Math.max(1, Math.round(boxH * scale))
+      if (toneCanvas.width !== tw || toneCanvas.height !== th) {
+        toneCanvas.width = tw
+        toneCanvas.height = th
+      }
+      toneCtx.save()
+      toneCtx.clearRect(0, 0, tw, th)
+      toneCtx.filter = 'grayscale(1) contrast(1.12) brightness(1.06)'
+      toneCtx.drawImage(src, 0, 0, sw, sh, 0, 0, tw, th)
+      toneCtx.filter = 'none'
+      toneCtx.globalCompositeOperation = 'multiply'
+      toneCtx.fillStyle = '#96ffbe'
+      toneCtx.fillRect(0, 0, tw, th)
+      toneCtx.restore()
+      return true
+    }
+
     const paint = (dt: number) => {
       if (!grid || !atlas) return
       if (sourceDirtyRef.current || isVideoSource() || !grid.hasSample) resample()
@@ -241,10 +275,41 @@ export function MatrixAvatar({ source, reducedMotion = false, className }: Matri
 
       drawRain(ctx, atlas, grid.state.backRain, grid, 1, 0, 3, 2, 0.34)
 
+      // Continuous-tone underlay + bloom: the figure's smooth shading, green-tinted,
+      // glowing — the glyphs become a texture over it instead of the whole image.
+      const src = activeSource()
+      if (src) {
+        const dims = readSourceDimensions(src)
+        if (dims.width > 0 && dims.height > 0) {
+          const box = computeContainBox(dims.width, dims.height, width, height)
+          const boxW = Math.round(box.dw)
+          const boxH = Math.round(box.dh)
+          const needTone = isVideoSource() || src !== lastToneSource || boxW !== lastToneW || boxH !== lastToneH
+          if (!needTone || renderTone(src, box.dw, box.dh)) {
+            if (needTone) {
+              lastToneSource = src
+              lastToneW = boxW
+              lastToneH = boxH
+            }
+            const breath = 0.9 + 0.1 * breathAt(grid.state.elapsed)
+            ctx.globalAlpha = 0.6 * breath
+            ctx.drawImage(toneCanvas, box.dx, box.dy, box.dw, box.dh)
+            ctx.globalCompositeOperation = 'lighter'
+            ctx.globalAlpha = 0.45 * breath
+            ctx.filter = 'blur(14px)'
+            ctx.drawImage(toneCanvas, box.dx, box.dy, box.dw, box.dh)
+            ctx.filter = 'none'
+            ctx.globalCompositeOperation = 'source-over'
+            ctx.globalAlpha = 1
+          }
+        }
+      }
+
       if (grid.hasSample) {
         const { cols, rows, cellSize, state, luminance, edges } = grid
         const cellPx = atlas.width / GLYPH_CHARSET.length
         const elapsed = state.elapsed
+        ctx.globalCompositeOperation = 'lighter'
         for (let row = 0; row < rows; row += 1) {
           const rowNorm = row / rows
           for (let col = 0; col < cols; col += 1) {
@@ -265,6 +330,7 @@ export function MatrixAvatar({ source, reducedMotion = false, className }: Matri
             )
           }
         }
+        ctx.globalCompositeOperation = 'source-over'
       }
 
       drawRain(ctx, atlas, grid.state.frontRain, grid, 5, 2, 6, 4, 0.55)
