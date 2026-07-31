@@ -1,3 +1,4 @@
+import { AvatarLab } from './AvatarLab'
 import { Scene } from './Scene'
 import { SceneBuilder } from './SceneBuilder'
 import { VoicePanel } from './VoicePanel'
@@ -17,6 +18,7 @@ export function DemoFormats({ reducedMotion }: DemoFormatsProps) {
           <Scene scene={{ ...defaultScene, format, reducedMotion }} />
         </div>
       ))}
+      <AvatarLab reducedMotion={reducedMotion} />
       <SceneBuilder />
       <VoicePanel />
     </>

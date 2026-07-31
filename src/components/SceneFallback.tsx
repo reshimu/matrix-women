@@ -5,19 +5,19 @@ import type { CSSProperties } from 'react'
 import type { SceneConfig, SceneLayer } from '../scene'
 import { selectActiveLayers } from '../scene'
 import { createCssRendererHost } from '../renderer/browser/cssRendererHost'
-import { SubjectPortrait } from './SubjectPortrait'
+import { MatrixAvatar } from './MatrixAvatar'
 
 type SceneFallbackProps = { scene: SceneConfig }
 
 const RAIN_TEXT = 'MATRIX / AI / LIGHT / HUMAN /'
 
-function renderLayer(layer: SceneLayer) {
+function renderLayer(layer: SceneLayer, reducedMotion: boolean) {
   const style: CSSProperties = { opacity: layer.opacity }
   switch (layer.type) {
     case 'portrait':
       return (
         <div key={layer.id} className="scene__subject" style={style} aria-hidden="true">
-          <SubjectPortrait />
+          <MatrixAvatar reducedMotion={reducedMotion} />
         </div>
       )
     case 'code-rain': {
@@ -69,7 +69,7 @@ export function SceneFallback({ scene }: SceneFallbackProps) {
 
   return (
     <section ref={sceneRef} className={`scene scene--${scene.format} ${motionClass}`} aria-labelledby={titleId}>
-      {activeLayers.map(renderLayer)}
+      {activeLayers.map((layer) => renderLayer(layer, scene.reducedMotion))}
       <div className="scene__content">
         <p className="scene__eyebrow">{scene.eyebrow}</p>
         <h1 id={titleId}>{scene.title}</h1>

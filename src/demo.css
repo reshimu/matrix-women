@@ -39,3 +39,17 @@
 
 @media (max-width: 720px) { .builder__layout, .builder__io { grid-template-columns: 1fr; } }
 @media (max-width: 480px) { .builder__scenes { flex-direction: column; align-items: stretch; } .builder__scenes .builder__field { min-width: 0; } }
+
+.avatar-lab { padding: 2rem clamp(1.5rem, 6vw, 6rem) 3rem; color: #eff6ff; }
+.avatar-lab__stage { position: relative; height: min(80vh, 44rem); border: 1px solid #1c2c3a; border-radius: .75rem; overflow: hidden; background: #010503; }
+.avatar-lab__stage--drag { border-color: #7be9d1; box-shadow: 0 0 0 2px #7be9d155, 0 0 3rem #22b55233 inset; }
+.avatar-lab__controls { display: flex; flex-wrap: wrap; align-items: center; gap: .75rem; margin-top: .9rem; }
+.avatar-lab__file { display: inline-flex; align-items: center; gap: .6rem; font-size: .85rem; color: #bdcbd7; border: 1px solid #1c2c3a; border-radius: .5rem; padding: .45rem .7rem; background: #0f1c2c; cursor: pointer; }
+.avatar-lab__file:focus-within { outline: 2px solid #7be9d1; outline-offset: 2px; }
+.avatar-lab__file input { max-width: 13rem; font-size: .75rem; color: #7a95a1; }
+.avatar-lab__controls button { border: 1px solid #1c2c3a; border-radius: .5rem; padding: .45rem .7rem; color: #eafffb; background: #0f1c2c; cursor: pointer; font-size: .85rem; }
+.avatar-lab__controls button:hover:not(:disabled) { background: #16283b; }
+.avatar-lab__controls button:disabled { opacity: .4; cursor: not-allowed; }
+.avatar-lab__controls button:focus-visible { outline: 2px solid #7be9d1; outline-offset: 2px; }
+.avatar-lab__hint { margin: 0; font-size: .8rem; color: #7a95a1; }
+.avatar-lab__error { margin: .5rem 0 0; color: #ff9a9a; font-size: .85rem; }

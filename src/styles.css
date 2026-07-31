@@ -17,6 +17,7 @@ h1 { margin: 0 0 .9rem; max-width: 11ch; font-size: clamp(2.65rem, 7vw, 6.75rem)
 .scene__rain span { writing-mode: vertical-rl; display: block; height: 160%; animation: descend 13s linear infinite; }
 .scene__subject { z-index: 0; inset: auto clamp(-6rem, 2vw, 3rem) 0 auto; width: min(46vw, 32rem); height: min(78vw, 44rem); filter: drop-shadow(0 0 4rem #63f0cc33); }
 .scene__subject svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.scene__subject canvas { border-radius: .5rem; }
 .subject__figure { filter: drop-shadow(0 .2rem .6rem #04120f66); }
 .subject__highlight { animation: shimmer 7s ease-in-out infinite; }
 .scene--still .subject__highlight { animation: none; }
