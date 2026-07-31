@@ -9,7 +9,11 @@ const DIST_LIB = 'dist/lib'
 
 const BUDGETS = [
   { name: 'index.js', match: (file) => file === 'index.js', maxBytes: 5 * 1024, required: true },
-  { name: 'react.js', match: (file) => file === 'react.js', maxBytes: 30 * 1024, required: true },
+  // Raised 30 → 36 kB on 2026-07-31: the MatrixAvatar glyph-hologram subject +
+  // continuous-tone pass measure 30.99 kB minified. The old headroom was fully
+  // consumed by the avatar feature (PR #9 flagged this); 36 kB restores ~5 kB
+  // of slack while still failing loudly on an accidental dependency.
+  { name: 'react.js', match: (file) => file === 'react.js', maxBytes: 36 * 1024, required: true },
   { name: 'react.css', match: (file) => file === 'react.css', maxBytes: 20 * 1024, required: true },
   {
     name: 'shared chunk',
